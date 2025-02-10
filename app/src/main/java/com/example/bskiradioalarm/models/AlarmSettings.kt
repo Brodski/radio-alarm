@@ -1,21 +1,19 @@
 package com.example.bskiradioalarm.models
 
 import android.content.SharedPreferences
-import java.time.DayOfWeek
 //import java.time.LocalTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import java.util.UUID
 
 @Serializable
 data class AlarmSettings(
     var uuid: String = UUID.randomUUID().toString(),
 
-    var hours: Int = 0,
+    var hour: Int? = null,
 
-    var minutes: Int = 0,
+    var minute: Int? = null,
 
     var daysOfWeek: MutableMap<String, Boolean> = mutableMapOf(
         "Monday" to false,
@@ -35,20 +33,23 @@ data class AlarmSettings(
         }
     }
     private fun toJsonStringSerialize(): String {
-        val json = Json {
-            encodeDefaults = true
-            prettyPrint = true
-        }
+        val json = Json { encodeDefaults = true; prettyPrint = true }
         return json.encodeToString(this)
     }
-    public fun encodeWeek() {
-        val jsonString = Json.encodeToString(daysOfWeek)
-        println("jsonString")
-        println(jsonString)
-    }
+    public fun save(sharedPreferences: SharedPreferences, alarmSettingsMap: MutableMap<String, AlarmSettings>){
+//        println("saving this:\n" + this.toJsonStringSerialize())
 
-    public fun save(sharedPreferences: SharedPreferences){
-        println("saving this:\n" + this.toJsonStringSerialize())
-        sharedPreferences.edit().putString(this.uuid, this.toJsonStringSerialize()).apply()
+        // Save in storage
+        val jsonStr: String =  this.toJsonStringSerialize()
+        sharedPreferences.edit().putString(this.uuid, jsonStr).apply()
+
+        // Save in memory
+        alarmSettingsMap[this.uuid] = this
     }
 }
+
+
+
+
+
+

@@ -17,17 +17,22 @@ import android.widget.TimePicker
 import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.view.Gravity
+import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import com.example.bskiradioalarm.models.AlarmSettings
-import java.time.LocalTime
-import java.time.format.TextStyle
 
 class AlarmsFragment : Fragment() {
 
     private var _binding: FragmentAlarmsBinding? = null
+    private val binding get() = _binding!! // only valid between onCreateView and onDestroyView.
 
-    private val binding get() = _binding!! // This property is only valid between onCreateView and onDestroyView.
+    // TODO load it up
+    private val alarmSettingsMap = mutableMapOf<String, AlarmSettings>()
+    private val uiAlarmsMap = mutableMapOf<String, LinearLayout>()
 
-    private val alarmSettingsList = mutableListOf<AlarmSettings>()
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -50,58 +55,70 @@ class AlarmsFragment : Fragment() {
         return root
     }
     private fun addNewAlarm() {
+        // Init
+        println("addNewAlarm() ")
+        val uuid = UUID.randomUUID().toString()
+        val newAlarmSettings: AlarmSettings = AlarmSettings()
+        newAlarmSettings.uuid = uuid
+        newAlarmSettings.save(sharedPreferences, alarmSettingsMap)
+        println("start......")
+        openClockDialog(newAlarmSettings, isNew = true)
+        println("end......")
+    }
+
+    private fun openClockDialog(alarmSettings: AlarmSettings, isNew: Boolean = false) {
         val calendar = Calendar.getInstance()
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-        val minute = calendar.get(Calendar.MINUTE)
+        val hourUi: Int = alarmSettings.hour ?: 9
+        val minuteUi: Int = alarmSettings.minute ?: 0
+
+        var timeSelected = false // pro trick
 
         val timePickerDialog = TimePickerDialog(
             requireContext(),
             android.R.style.Theme_DeviceDefault_Dialog,
-            ::onTimeSelected,
-            hour, minute, false
+            { view, selectedHour, selectedMinute  ->
+                println("clicked in clock")
+                timeSelected = true
+                alarmSettings.hour = selectedHour
+                alarmSettings.minute = selectedMinute
+            },
+            hourUi, minuteUi, false
         )
+        timePickerDialog.setOnDismissListener {
+            if (timeSelected) { // Completed
+                println("Dialog dismissed AFTER selection")
+                if (isNew) {
+                    addAlarmUi(alarmSettings)
+                }
+                else {
+                    updateAlarmUi(alarmSettings)
+                }
+//                openWeekdaySelector(alarmSettings)
+
+            }
+            else { // Canceled
+                println("Dialog dismissed WITHOUT selection")
+//                onCancel?.invoke()
+            }
+        }
         timePickerDialog.show()
     }
-    private fun onTimeSelected(view: TimePicker, selectedHour: Int, selectedMinute: Int) {
-        val uuid = UUID.randomUUID().toString()
-        val selectedTime: LocalTime = LocalTime.of(selectedHour, selectedMinute)
-        val alarmSettings: AlarmSettings = AlarmSettings()
-//        alarmSettings.wakeTime = selectedTime
-        alarmSettings.uuid = uuid
-        println("here we go !!!!!!")
-        var jsonAll = AlarmSettings.savePrepViaString(alarmSettings)
-        println("jsonAll")
-        println(jsonAll)
 
-        val textView = TextView(requireContext()).apply { // Create a new TextView dynamically
-            text = String.format("%02d:%02d", selectedHour, selectedMinute)
-            textSize = 18f
-            setPadding(20, 10, 20, 10)
-            setOnClickListener { showWeekdaySelector(alarmSettings) }
-        }
-        binding.alarmsContainer.addView(textView) // Add to UI
+    private fun openWeekdaySelector(alarmSettings: AlarmSettings) {
 
-
-//        val timeUi = String.format("%02d:%02d", selectedHour, selectedMinute)
-//        binding.alarmTextView.text = timeUi  // Update UI
-    }
-
-    private fun showWeekdaySelector(alarmSettings: AlarmSettings) {
-
-
-        val dialogView = LinearLayout(requireContext()).apply {
+        // Custom pop-up
+        val weekdayView = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(50, 30, 50, 10)
-            for ((day, isOn) in alarmSettings.daysOfWeek) {
-                println("$day: $isOn")
-//                val dayString = day.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
-                val dayString = day
+
+            // 7 days
+            for ((day, isAlarmOn) in alarmSettings.daysOfWeek) {
                 val checkBox = CheckBox(requireContext()).apply {
-                    text = dayString
-                    isChecked = isOn
+                    text = day
+                    isChecked = isAlarmOn
                     setOnCheckedChangeListener { _, isChecked ->
                         alarmSettings.daysOfWeek[day] = isChecked
-//                        saveAlarms()
+//                        alarmSettings.save(sharedPreferences, alarmSettingsMap)
                     }
                 }
                 addView(checkBox)
@@ -110,12 +127,127 @@ class AlarmsFragment : Fragment() {
 
         AlertDialog.Builder(requireContext())
             .setTitle("Select Days for alarmTime")
-            .setView(dialogView)
+            .setView(weekdayView)
             .setPositiveButton("OK") { _, _ -> }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
+    private fun onTimeSelected(view: TimePicker, alarmSettings: AlarmSettings) {
+
+        openWeekdaySelector(alarmSettings)
+//        val timeUi = String.format("%02d:%02d", selectedHour, selectedMinute)
+//        binding.alarmTextView.text = timeUi  // Update UI
+    }
+
+
+    private fun updateAlarmUi(alarmSettings: AlarmSettings) {
+
+        val container = uiAlarmsMap[alarmSettings.uuid]
+        val hourMinLabel = container?.findViewWithTag<TextView>("alarm_time_text")
+        if (hourMinLabel != null) {
+            hourMinLabel.text = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
+        } else {
+            println("WTF NO LABELLLLL")
+        }
+        println("new: " + hourMinLabel?.text)
+
+    }
+///////////////////////////////////////////////////////////////////////////////
+//        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
+//        | 12:30  |   |Mon |  |Tue |  |Wed |  |Thu |  |Fri |  |Sat |  |Sun |
+//        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
+//                      [ x ]   [   ]    [ x ]   [   ]  [ x ]    [   ]   [ x ]
+///////////////////////////////////////////////////////////////////////////////
+    private fun addAlarmUi(alarmSettings: AlarmSettings) {
+
+        // CONTAINER
+        val container = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20, 10, 20, 10)
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(Color.parseColor("#F0F0F0")) // Light gray background
+        }
+
+        // TIME 08:30
+        val textView = TextView(requireContext()).apply {
+            text = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
+            textSize = 18f
+            setPadding(20, 10, 20, 10)
+            setOnClickListener { openClockDialog(alarmSettings)}
+            tag = "alarm_time_text"
+        }
+
+        // Create the Delete Button (❌)
+        val deleteButton = ImageButton(requireContext()).apply {
+//            setImageResource(android.R.drawable.ic_delete) // Use a built-in small trash icon
+            setImageResource(android.R.drawable.ic_delete) // Use a built-in small trash icon
+            layoutParams = LinearLayout.LayoutParams(60, 60) // Explicit size (adjust as needed)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE // Keeps the icon within bounds
+            setBackgroundColor(Color.TRANSPARENT) // Remove default button background
+            setPadding(5, 5, 5, 5) // Minimal padding
+            setOnClickListener { showDeleteConfirmationDialog(alarmSettings, container) }
+        }
+
+
+        container.addView(textView)
+
+        // CHECKBOXES
+        val checkBoxStates: BooleanArray = BooleanArray(7)
+        val dayLabels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+        for (i in 0 until 7) {
+
+            val checkBoxContainer = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(5, 5, 5, 5)
+            }
+
+            val dayName = TextView(requireContext()).apply {
+                text = dayLabels[i]
+                textSize = 14f
+                gravity = Gravity.CENTER
+            }
+
+            val checkBox = CheckBox(requireContext()).apply {
+                setPadding(5, 5, 5, 5)
+                setOnCheckedChangeListener { _, isChecked ->
+                    checkBoxStates[i] = isChecked
+                    onCheckBoxToggled(i, isChecked)
+                }
+            }
+            checkBoxContainer.addView(dayName)
+            checkBoxContainer.addView(checkBox)
+
+            container.addView(checkBoxContainer)
+            uiAlarmsMap[alarmSettings.uuid] = container
+        }
+
+        container.addView(deleteButton)
+
+        (container.parent as? ViewGroup)?.removeView(container)
+
+        binding.alarmsContainer.addView(container) // Add to UI
+    }
+
+    private fun onCheckBoxToggled(i: Int, isChecked: Boolean) {
+        println("clicked it:" + i + isChecked)
+    }
+    private fun showDeleteConfirmationDialog(alarmSettings: AlarmSettings, container: LinearLayout) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Alarm")
+            .setMessage("Are you sure you want to delete this alarm?")
+            .setPositiveButton("Delete") { _, _ ->
+                (container.parent as? ViewGroup)?.removeView(container)
+                uiAlarmsMap.remove(alarmSettings.uuid)
+//                alarmContainerViews.remove(container)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    
 //    private fun saveAlarms() {
 //        val editor = sharedPreferences.edit()
 //        editor.putStringSet("alarm_times", alarmList.toSet())
@@ -145,7 +277,7 @@ class AlarmsFragment : Fragment() {
 //                text = time
 //                textSize = 18f
 //                setPadding(20, 10, 20, 10)
-//                setOnClickListener { showWeekdaySelector(time) }
+//                setOnClickListener { openWeekdaySelector(time) }
 //            }
 //
 //            binding.alarmsContainer.addView(textView)

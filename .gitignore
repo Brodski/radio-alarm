@@ -1,0 +1,60 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android Studio and IntelliJ project files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Build outputs
+/build/
+.gradle/
+.cxx/
+.externalNativeBuild/
+.cinterop/
+.metadata/
+.kotlinc/
+local.properties
+
+# Dependency caches
+.gradle/
+**/build/
+**/out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# User-specific files
+*.log
+*.keystore
+*.jks
+*.class
+*.swp
+*.swo
+*.DS_Store
+
+# Android specific files
+captures/
+*.apk
+*.aab
+*.dex
+
+# Generated files
+gen/
+bin/
+obj/
+
+# Exclude test result files
+/test-results/

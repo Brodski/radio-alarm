@@ -11,11 +11,11 @@ import java.util.UUID
 data class AlarmSettings(
     var uuid: String = UUID.randomUUID().toString(),
 
-    var hour: Int? = null,
+    // 9:00am default
+    var hour: Int = 9,
+    var minute: Int = 0,
 
-    var minute: Int? = null,
-
-    var daysOfWeek: MutableMap<String, Boolean> = mutableMapOf(
+    var daysOfWeek: MutableMap<String, Boolean> = linkedMapOf(
         "Monday" to false,
         "Tuesday" to false,
         "Wednesday" to false,
@@ -24,6 +24,7 @@ data class AlarmSettings(
         "Saturday" to false,
         "Sunday" to false
     ),
+
 ) {
 
     companion object {
@@ -36,7 +37,7 @@ data class AlarmSettings(
         val json = Json { encodeDefaults = true; prettyPrint = true }
         return json.encodeToString(this)
     }
-    public fun save(sharedPreferences: SharedPreferences, alarmSettingsMap: MutableMap<String, AlarmSettings>){
+    public fun save(sharedPreferences: SharedPreferences){
 //        println("saving this:\n" + this.toJsonStringSerialize())
 
         // Save in storage
@@ -44,7 +45,21 @@ data class AlarmSettings(
         sharedPreferences.edit().putString(this.uuid, jsonStr).apply()
 
         // Save in memory
-        alarmSettingsMap[this.uuid] = this
+//        alarmSettingsMap[this.uuid] = this
+    }
+    public fun delete(sharedPreferences: SharedPreferences) {
+        println("BEFORE---------------")
+        for ((uuid, value) in sharedPreferences.all) {
+            println(uuid)
+        }
+
+        val deleteUuid: String = this.uuid
+        sharedPreferences.edit().remove(deleteUuid).apply()
+
+        println("AFTER---------------")
+        for ((uuid, value) in sharedPreferences.all) {
+            println(uuid)
+        }
     }
 }
 

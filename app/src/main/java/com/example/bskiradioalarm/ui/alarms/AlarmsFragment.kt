@@ -30,12 +30,9 @@ class AlarmsFragment : Fragment() {
 
     private lateinit var sharedPreferences: SharedPreferences
 
-    private val keyAxllUuidsSet = CoolConstants.keyAllUuidsSet
-
     // TODO load it up
     private val alarmSettingsMap = mutableMapOf<String, AlarmSettings>()
     private val uiAlarmsMap = mutableMapOf<String, LinearLayout>()
-    private var uuidSet = mutableSetOf<String>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         sharedPreferences = requireContext().getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
@@ -54,9 +51,7 @@ class AlarmsFragment : Fragment() {
             addNewAlarm()
         }
 
-//        uuidSet = sharedPreferences.getStringSet(keyAxllUuidsSet, emptySet())?.toMutableSet() ?: mutableSetOf() // idk it just works
-//        loadUuids(uuidSet)
-        loadUuids()
+        loadAlarmsFromStorage()
         return root
     }
     ///////////////////////////////////////////////
@@ -65,15 +60,10 @@ class AlarmsFragment : Fragment() {
     private fun addNewAlarm() {
         // Init
         println("addNewAlarm() ")
-        val uuid = System.currentTimeMillis().toString()
         val newAlarmSettings: AlarmSettings = AlarmSettings()
-        newAlarmSettings.uuid = uuid
         newAlarmSettings.save(sharedPreferences)
         addAlarmUi(newAlarmSettings)
 
-        // Save new one
-//        uuidSet.add(uuid)
-//        sharedPreferences.edit().putStringSet(keyAxllUuidsSet, uuidSet).apply()
     }
 
     ///////////////////////////////////////////////
@@ -115,7 +105,7 @@ class AlarmsFragment : Fragment() {
     }
 
     private fun updateAlarmUi(alarmSettings: AlarmSettings) {
-        val container = uiAlarmsMap[alarmSettings.uuid]
+        val container = uiAlarmsMap[alarmSettings.id]
         val hourMinLabel = container?.findViewWithTag<TextView>("alarm_time_text")
         if (hourMinLabel != null) {
             hourMinLabel.text = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
@@ -125,16 +115,14 @@ class AlarmsFragment : Fragment() {
         println("new: " + hourMinLabel?.text)
     }
 
-    private fun loadUuids() {
-        println("(loadUuids) ALL UUIDS!!!!!!")
-        for ((uuid, value) in sharedPreferences.all) {
-            println("----------------")
-            println("(loadUuids) Key: $uuid, Value: $value")
-            val jsonStr: String = sharedPreferences.getString(uuid, "").toString()
+    private fun loadAlarmsFromStorage() {
+        println("(load) loading alarms from Storage")
+        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(sharedPreferences)
+        for ((keyId, value) in allAlarmsMap) {
+            val jsonStr: String = sharedPreferences.getString(keyId, "").toString()
             val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
             addAlarmUi(alarmSettings)
         }
-        println("(loadUuids) LOOP OF ALL END")
     }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -201,7 +189,7 @@ class AlarmsFragment : Fragment() {
             checkBoxContainer.addView(checkBox)
 
             container.addView(checkBoxContainer)
-            uiAlarmsMap[alarmSettings.uuid] = container
+            uiAlarmsMap[alarmSettings.id] = container
         }
 
         container.addView(deleteButton)
@@ -227,7 +215,7 @@ class AlarmsFragment : Fragment() {
             .setMessage("Are you sure you want to delete this alarm?")
             .setPositiveButton("Delete") { _, _ ->
                 (container.parent as? ViewGroup)?.removeView(container)
-                uiAlarmsMap.remove(alarmSettings.uuid)
+                uiAlarmsMap.remove(alarmSettings.id)
 
                 alarmSettings.delete(sharedPreferences)
 //                sharedPreferences.getStringSet(keyAlarmUuidsSet, emptySet()) ?: emptySet()

@@ -14,13 +14,14 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         // Show notification when alarm triggers
         showNotification(context, "Alarm", "Time to wake up!")
-        println("ALARM GOING OFF")
-        println("ALARM GOING OFF")
-        println("ALARM GOING OFF")
-        println("ALARM GOING OFF")
-        println("ALARM GOING OFF")
-        println("ALARM GOING OFF")
-        println("ALARM GOING OFF")
+        println("ALARM GOING OFF " + intent)
+//        println("ALARM GOING OFF: Action - " + intent.action)
+//        println("ALARM GOING OFF: Data - " + intent.data)
+        println("ALARM GOING OFF: Extras - " + intent.extras?.toString())
+
+//        intent.extras?.keySet()?.forEach { key ->
+//            println("ALARM GOING OFF: Extra - $key: " + intent.extras?.get(key))
+//        }
     }
 
     private fun showNotification(context: Context, title: String, message: String) {

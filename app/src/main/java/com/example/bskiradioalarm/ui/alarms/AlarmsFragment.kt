@@ -22,6 +22,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.utils.CoolConstants
+import com.example.bskiradioalarm.utils.Scheduler
 
 class AlarmsFragment : Fragment() {
 
@@ -34,8 +35,11 @@ class AlarmsFragment : Fragment() {
     private val alarmSettingsMap = mutableMapOf<String, AlarmSettings>()
     private val uiAlarmsMap = mutableMapOf<String, LinearLayout>()
 
+    private lateinit var scheduler: Scheduler
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         sharedPreferences = requireContext().getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
+        scheduler = Scheduler(requireContext())
 
         val alarmsViewModel = ViewModelProvider(this).get(AlarmsViewModel::class.java)
 
@@ -51,11 +55,12 @@ class AlarmsFragment : Fragment() {
             addNewAlarm()
         }
 
+        println("(Alarm-onCreateView) loading alarms from storage ...")
         loadAlarmsFromStorage()
         return root
     }
     ///////////////////////////////////////////////
-    // TAP NEW "+" BUTTON
+    // TAP NEW "+" BUTTON 1/2
     ///////////////////////////////////////////////
     private fun addNewAlarm() {
         // Init
@@ -93,6 +98,7 @@ class AlarmsFragment : Fragment() {
             if (timeSelected) {
                 println("Dialog dismissed AFTER selection")
                 alarmSettings.save(sharedPreferences)
+                alarmSettings.updateTime(scheduler)
                 updateAlarmUi(alarmSettings)
 
             }
@@ -112,19 +118,21 @@ class AlarmsFragment : Fragment() {
         } else {
             println("WTF NO LABELLLLL")
         }
-        println("new: " + hourMinLabel?.text)
+        println("new clock time: " + hourMinLabel?.text)
     }
 
     private fun loadAlarmsFromStorage() {
-        println("(load) loading alarms from Storage")
         val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(sharedPreferences)
         for ((keyId, value) in allAlarmsMap) {
             val jsonStr: String = sharedPreferences.getString(keyId, "").toString()
             val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
+            println("(load) loading alarm to ui: ${alarmSettings.id}")
             addAlarmUi(alarmSettings)
         }
     }
 
+///////////////////////////////////////////////////////////////////////////////////
+// ADD NEW ALARM 2/2
 ///////////////////////////////////////////////////////////////////////////////////
 //        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
 //        | 12:30  |   |Mon |  |Tue |  |Wed |  |Thu |  |Fri |  |Sat |  |Sun |  ❌
@@ -163,9 +171,7 @@ class AlarmsFragment : Fragment() {
 
         // CHECKBOXES
         val checkBoxStates: BooleanArray = alarmSettings.daysOfWeek.values.toBooleanArray()
-
         val dayLabels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-
         for (i in 0 until 7) {
             val checkBoxContainer = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
@@ -199,11 +205,16 @@ class AlarmsFragment : Fragment() {
         binding.alarmsContainer.addView(container) // Add to UI
     }
 
+    //////////////////////////////////////
+    // CHECKBOX TOGGLE
+    //////////////////////////////////////
     private fun onCheckBoxToggled(i: Int, isChecked: Boolean, alarmSettings: AlarmSettings) {
-        val day: MutableMap.MutableEntry<String, Boolean> = alarmSettings.daysOfWeek.entries.elementAt(i)
-        alarmSettings.daysOfWeek[day.key] = isChecked
+        val dayMap: MutableMap.MutableEntry<String, Boolean> = alarmSettings.daysOfWeek.entries.elementAt(i)
+        alarmSettings.daysOfWeek[dayMap.key] = isChecked
         alarmSettings.save(sharedPreferences)
-        println("AFTER  " + alarmSettings.daysOfWeek[day.key])
+        val day = dayMap.key
+        val isOn = alarmSettings.daysOfWeek[dayMap.key]
+        scheduler.setWakeUp2(alarmSettings, day)
     }
 
     //////////////////////////////////////
@@ -216,10 +227,7 @@ class AlarmsFragment : Fragment() {
             .setPositiveButton("Delete") { _, _ ->
                 (container.parent as? ViewGroup)?.removeView(container)
                 uiAlarmsMap.remove(alarmSettings.id)
-
-                alarmSettings.delete(sharedPreferences)
-//                sharedPreferences.getStringSet(keyAlarmUuidsSet, emptySet()) ?: emptySet()
-//                alarmContainerViews.remove(container)
+                alarmSettings.delete(sharedPreferences, scheduler)
             }
             .setNegativeButton("Cancel", null)
             .show()

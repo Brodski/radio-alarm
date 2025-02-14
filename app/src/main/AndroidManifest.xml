@@ -24,7 +24,7 @@
         </activity>
 
         <!-- BAM -->
-        <receiver android:name=".utils.AlarmReceiver" android:exported="false"/>
+        <receiver android:name=".utils.WakeUpReceiver" android:exported="false"/>
 
     </application>
 

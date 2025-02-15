@@ -143,7 +143,7 @@ class AlarmsFragment : Fragment() {
         // EMPTY  CONTAINER
         val container = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(20, 10, 20, 10)
+            setPadding(10, 10, 10, 10)
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.parseColor("#F0F0F0")) // Light gray background
         }
@@ -158,6 +158,7 @@ class AlarmsFragment : Fragment() {
         }
 
         // Delete Button (❌)
+        val todooo = android.R.drawable.ic_media_play
         val deleteButton = ImageButton(requireContext()).apply {
             setImageResource(android.R.drawable.ic_delete)
             layoutParams = LinearLayout.LayoutParams(60, 60)
@@ -221,8 +222,10 @@ class AlarmsFragment : Fragment() {
     // DELETE ALARM
     //////////////////////////////////////
     private fun deleteAndConfirm(alarmSettings: AlarmSettings, container: LinearLayout) {
+        val time = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
+
         AlertDialog.Builder(requireContext())
-            .setTitle("Delete Alarm")
+            .setTitle("Delete Alarm @ $time")
             .setMessage("Are you sure you want to delete this alarm?")
             .setPositiveButton("Delete") { _, _ ->
                 (container.parent as? ViewGroup)?.removeView(container)

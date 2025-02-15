@@ -1,14 +1,18 @@
-package com.example.bskiradioalarm.utils
+package com.example.bskiradioalarm.ui.wakeup
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
+import com.example.bskiradioalarm.utils.RadioService
+import com.example.bskiradioalarm.utils.Scheduler
 import java.util.Calendar
 
 class WakeUpReceiver : BroadcastReceiver() {
@@ -16,14 +20,47 @@ class WakeUpReceiver : BroadcastReceiver() {
         println("------------ ALARM GOING OFF -------------")
         println(intent)
 
+        // UNPACK INTENT
         val requestCode   = intent.getIntExtra("requestCode", -1)
         val msg           = intent.getStringExtra("msg")
         val id            = intent.getStringExtra("id") ?: "-1"
         val wakeEpochTemp = intent.getStringExtra("wakeEpoch") ?: "-1"
         val wakeCal: Calendar = Calendar.getInstance().apply { timeInMillis = wakeEpochTemp.toLong() }
         val title = "Alarm: $requestCode"
-        showNotification(context, title, wakeCal)
-        repeatNextWeek(context, wakeCal, id)
+
+//        showNotification(context, title, wakeCal)
+
+        // PLAY RADIO
+        val streamUrl = "https://stream1.cprnetwork.org/cpr2_lo"
+
+        val radioIntent = Intent(context, RadioService::class.java)
+        radioIntent.putExtra("STREAM_URL", streamUrl)
+        context.startForegroundService(radioIntent)
+
+        val alarmIntent = Intent(context, WakeUpActivity::class.java)
+//        alarmIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+//        wakeUpScreen(context)
+        context.startActivity(alarmIntent)
+
+
+        println("REPEAT NEXT WEEK = OFF")
+        println("REPEAT NEXT WEEK = OFF")
+        println("REPEAT NEXT WEEK = OFF")
+//        repeatNextWeek(context, wakeCal, id)
+    }
+    private fun wakeUpScreen(context: Context) {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.FULL_WAKE_LOCK or
+                    PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                    PowerManager.ON_AFTER_RELEASE,
+            "BskiAlarmRadio:WakeLock"
+        )
+
+        wakeLock.acquire(5000) // Keep the screen on for 5 seconds
     }
 
     private fun repeatNextWeek(context: Context, currentAlarmCal: Calendar, id: String) {
@@ -55,6 +92,7 @@ class WakeUpReceiver : BroadcastReceiver() {
 
 
     private fun showNotification(context: Context, title: String, wakeCal: Calendar) {
+        val notificationIdTest = 2
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "alarm_channel"
 
@@ -72,6 +110,6 @@ class WakeUpReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_HIGH) // High-priority to show immediately
             .build()
 
-        notificationManager.notify(1, notification)
+        notificationManager.notify(notificationIdTest, notification)
     }
 }

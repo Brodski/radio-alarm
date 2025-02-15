@@ -5,10 +5,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.provider.CalendarContract.CalendarAlerts
 import android.provider.Settings
 import com.example.bskiradioalarm.models.AlarmSettings
-import java.time.DayOfWeek
+import com.example.bskiradioalarm.ui.wakeup.WakeUpReceiver
 
 import java.util.*
 
@@ -29,23 +28,53 @@ class Scheduler(context: Context) {
         }
     }
 
-    fun createAlarmIntent(alarmSettings: AlarmSettings, day: String){
+    fun testAlarmOnStart() {
+        var alarmSettings = AlarmSettings()
+        var cal = Calendar.getInstance()
+        var sec = cal.get(Calendar.SECOND)
+        var min = cal.get(Calendar.MINUTE)
+        var hour = cal.get(Calendar.HOUR_OF_DAY)
+        var day = cal.get(Calendar.DAY_OF_WEEK)
+        var dayName = AlarmSettings.getDayName(day)
+
+//        println("dayName:  $dayName")
+//        println("sec:  $sec")
+//        println("min: $min")
+//        println("hour: $hour")
+//        println("day:  $day")
+        alarmSettings.daysOfWeek[dayName] = true
+        alarmSettings.hour = hour
+        alarmSettings.minute = min + 5
+        this.createAlarmIntent(alarmSettings, dayName, true)
+    }
+
+    fun createAlarmIntent(alarmSettings: AlarmSettings, day: String, isTest: Boolean = false){
         val requestCodeAlarm = alarmSettings.getRequestCode(day)
 
         // SET TIME
         val calendar: Calendar = Calendar.getInstance()
+//        println("TIME: " + calendar.time)
         calendar.set(Calendar.DAY_OF_WEEK, AlarmSettings.getDayAsInt(day))
         calendar.set(Calendar.HOUR_OF_DAY, alarmSettings.hour)
         calendar.set(Calendar.MINUTE, alarmSettings.minute)
         calendar.set(Calendar.SECOND, 0)
 
-        val calendarEpsilon = Calendar.getInstance().apply { add(Calendar.SECOND, 20) }
-//        println("XalarmSettings:" + alarmSettings)
-//        println("calendar.timeInMillis:   " + calendar.timeInMillis)
-//        println("calEpsilon.timeInMillis: " + calendarEpsilon.timeInMillis)
-        if (calendar.before(calendarEpsilon)) {
-            println("ADDING A WEEK!")
+        val calendarEpsilon = Calendar.getInstance().apply { add(Calendar.MILLISECOND, 20) }
+        if ((calendar.before(calendarEpsilon) || Calendar.getInstance().timeInMillis == calendar.timeInMillis)  && !isTest) {
+//            println("ADDING A WEEK!")
             calendar.add(Calendar.WEEK_OF_YEAR, 1) // Move to next week if today’s time has passed
+        }
+        if (isTest) {
+            println("TEST: +20 sec")
+            val cal2: Calendar = Calendar.getInstance()
+            val nowSec: Int = cal2.get(Calendar.SECOND)
+            val nowMin: Int = cal2.get(Calendar.SECOND)
+            if ( nowSec >= 53) {
+                calendar.add(Calendar.MINUTE, 1 )
+            }
+            else {
+                calendar.set(Calendar.SECOND, nowSec + 7)
+            }
         }
 
         // BUILD INTENT
@@ -78,6 +107,14 @@ class Scheduler(context: Context) {
             println("--------------------------------")
             val jsonStr = value.toString()
             val alarmSettings: AlarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
+            println(alarmSettings)
+            for ((dayName, isOn) in alarmSettings.daysOfWeek) {
+                println("$keyId  $dayName $isOn")
+                if (isOn) {
+                    this.createAlarmIntent(alarmSettings, dayName)
+                }
+
+            }
 
         }
     }

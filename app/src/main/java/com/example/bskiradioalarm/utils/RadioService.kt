@@ -17,7 +17,7 @@ class RadioService : Service() {
         val streamUrl = intent?.getStringExtra("STREAM_URL") ?: return START_NOT_STICKY
 
         startForegroundNotification()
-//        playStream(streamUrl)
+        playStream(streamUrl)
         return START_STICKY
     }
 

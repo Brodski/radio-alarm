@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/itemText"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:padding="8dp"
+        android:text="Item Name"/>
+
+    <Button
+        android:id="@+id/selectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginRight="8dp"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp"
+        android:text="Select" />
+
+    <ImageButton
+        android:id="@+id/toastButton"
+        android:layout_width="45dp"
+        android:layout_height="match_parent"
+        android:src="@android:drawable/ic_media_play"
+        android:tint="@color/black"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Play Button"
+        />
+
+<!--    android:backgroundTint="@color/design_default_color_primary"-->
+<!--        android:background="?attr/selectableItemBackgroundBorderless"-->
+</LinearLayout>

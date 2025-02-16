@@ -13,4 +13,32 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
     </style>
+
+
+    <!-- Light Theme -->
+    <style name="Theme.MyApp" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#6200EE</item>
+        <item name="colorSecondary">#03DAC5</item>
+    </style>
+
+    <!-- Dark Theme -->
+    <style name="Theme.MyApp.Dark" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#BB86FC</item>
+        <item name="colorSecondary">#03DAC5</item>
+    </style>
+
+    <!-- Custom AlertDialog Theme -->
+    <style name="CustomAlertDialogTheme" parent="Theme.Material3.DayNight.Dialog.Alert">
+        <item name="android:background">#747474</item>  <!-- Dark background -->
+        <item name="android:textColorPrimary">#FFFFFF</item>  <!-- White text -->
+        <item name="android:buttonStyle">@style/DialogButtonStyle</item>
+    </style>
+
+    <!-- Custom Button Style for Dialog -->
+    <style name="DialogButtonStyle" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">#03DAC5</item>
+    </style>
+
+
+
 </resources>

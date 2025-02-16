@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         // TODO
         // NOT GOOD CODE JUST TESTING
         val scheduler: Scheduler = Scheduler(this)
-        scheduler.testAlarmOnStart()
+//        scheduler.testAlarmOnStart()
         Log.e("BootReceiver", "test123 BOOT ACTION COMPLETED!!!!!!")
 //        checkAndRequestOverlayPermission()
 

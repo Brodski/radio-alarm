@@ -44,7 +44,7 @@ class Scheduler(context: Context) {
 //        println("day:  $day")
         alarmSettings.daysOfWeek[dayName] = true
         alarmSettings.hour = hour
-        alarmSettings.minute = min + 5
+        alarmSettings.minute = min
         this.createAlarmIntent(alarmSettings, dayName, true)
     }
 
@@ -68,7 +68,6 @@ class Scheduler(context: Context) {
             println("TEST: +20 sec")
             val cal2: Calendar = Calendar.getInstance()
             val nowSec: Int = cal2.get(Calendar.SECOND)
-            val nowMin: Int = cal2.get(Calendar.SECOND)
             if ( nowSec >= 53) {
                 calendar.add(Calendar.MINUTE, 1 )
             }

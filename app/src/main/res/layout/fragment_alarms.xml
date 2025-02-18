@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:paddingTop="8dp">
 
         <!-- Blank Row with Plus Button -->
         <LinearLayout

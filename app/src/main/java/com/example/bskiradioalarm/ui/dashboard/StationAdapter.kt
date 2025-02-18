@@ -6,18 +6,23 @@ import android.widget.*
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.example.bskiradioalarm.R
+import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.models.Station
+import com.example.bskiradioalarm.ui.dashboard.DashboardViewModel
 
 class StationAdapter(
     private val context: Context,
     private val stations: List<Station>,
-    private val onStationSelected: (Station) -> Unit,
-    private val onPlayStation: (Station) -> Unit
+    private val viewModel: DashboardViewModel,
+    private val onStationSelected: (Station, AlarmSettings) -> Unit,
+    private val onPlayStation: (Station) -> Unit,
+    private val alarmSettings: AlarmSettings,
     ) : BaseAdapter() {
 
+    // we need this, stupid that I have to write it -.- yet never call it
     override fun getCount(): Int = stations.size
     override fun getItem(position: Int): Any = stations[position]
-    override fun getItemId(position: Int): Long = position.toLong() // we need this, stupid that I have to write it -.- yet never call it
+    override fun getItemId(position: Int): Long = position.toLong()
 
     private var selectedIndex: Int = -1
     private var playIndex: Int = -1
@@ -37,6 +42,12 @@ class StationAdapter(
             viewHolder = view.tag as ViewHolder
         }
 
+        // preloaded selected
+        if (selectedIndex == -1) {
+            selectedIndex = viewModel.getIndexByTitle(alarmSettings.station?.title)
+        }
+
+
         val station = stations[position]
         viewHolder.stationUiText.text = station.title
 
@@ -54,16 +65,22 @@ class StationAdapter(
             viewHolder.playBtn.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent)) // Not playing
         }
 
-        // Handle selection click
+        // Selection click
         viewHolder.selectBtn.setOnClickListener {
             selectedIndex = position // Store selected position
-            notifyDataSetChanged() // Refresh UI
+            viewModel.selectedStation.value = station
+            notifyDataSetChanged()    // Refresh UI
+
+            // logic
+            onStationSelected(station, alarmSettings)
         }
 
-        // Handle play button click
+        // Play button click
         viewHolder.playBtn.setOnClickListener {
-            playIndex = position // Store playing position
+            playIndex = position   // Store playing position
             notifyDataSetChanged() // Refresh UI
+
+            // logic
             onPlayStation(station)
         }
 

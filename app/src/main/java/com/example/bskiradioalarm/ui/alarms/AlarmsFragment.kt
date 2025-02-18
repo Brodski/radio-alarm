@@ -1,6 +1,7 @@
 package com.example.bskiradioalarm.ui.alarms
 
 
+import StationAdapter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,14 +16,23 @@ import java.util.*
 import android.app.TimePickerDialog
 import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.ListView
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
+import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
+import com.example.bskiradioalarm.models.Station
+import com.example.bskiradioalarm.ui.dashboard.DashboardViewModel
 import com.example.bskiradioalarm.utils.CoolConstants
 import com.example.bskiradioalarm.utils.Scheduler
+import kotlin.collections.LinkedHashMap
 
 class AlarmsFragment : Fragment() {
 
@@ -30,6 +40,7 @@ class AlarmsFragment : Fragment() {
     private val binding get() = _binding!! // only valid between onCreateView and onDestroyView.
 
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var stationSharedPreferences: SharedPreferences
 
     // TODO load it up
     private val alarmSettingsMap = mutableMapOf<String, AlarmSettings>()
@@ -37,10 +48,15 @@ class AlarmsFragment : Fragment() {
 
     private lateinit var scheduler: Scheduler
 
+//    private val sharedStationsViewModel: DashboardViewModel by activityViewModels()
+    private val sharedStationsViewModel: DashboardViewModel by viewModels()
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         sharedPreferences = requireContext().getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
+        stationSharedPreferences = requireContext().getSharedPreferences("station_setting", Context.MODE_PRIVATE)
         scheduler = Scheduler(requireContext())
 
+        val sharedStationsViewModel = ViewModelProvider(this).get(DashboardViewModel::class.java)
         val alarmsViewModel = ViewModelProvider(this).get(AlarmsViewModel::class.java)
 
         _binding = FragmentAlarmsBinding.inflate(inflater, container, false)
@@ -59,6 +75,13 @@ class AlarmsFragment : Fragment() {
         loadAlarmsFromStorage()
         return root
     }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        sharedStationsViewModel.loadStations()
+}
+
     ///////////////////////////////////////////////
     // TAP NEW "+" BUTTON 1/2
     ///////////////////////////////////////////////
@@ -114,7 +137,7 @@ class AlarmsFragment : Fragment() {
         val container = uiAlarmsMap[alarmSettings.id]
         val hourMinLabel = container?.findViewWithTag<TextView>("alarm_time_text")
         if (hourMinLabel != null) {
-            hourMinLabel.text = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
+            hourMinLabel.text = alarmSettings.prettyPrintTime()
         } else {
             println("WTF NO LABELLLLL")
         }
@@ -135,7 +158,7 @@ class AlarmsFragment : Fragment() {
 // ADD NEW ALARM 2/2
 ///////////////////////////////////////////////////////////////////////////////////
 //        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
-//        | 12:30  |   |Mon |  |Tue |  |Wed |  |Thu |  |Fri |  |Sat |  |Sun |  ❌
+//   🔊   | 12:30  |   |Mon |  |Tue |  |Wed |  |Thu |  |Fri |  |Sat |  |Sun |  ❌
 //        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
 //                      [ x ]   [   ]    [ x ]   [   ]  [ x ]    [   ]   [ x ]
 ///////////////////////////////////////////////////////////////////////////////////
@@ -143,14 +166,26 @@ class AlarmsFragment : Fragment() {
         // EMPTY  CONTAINER
         val container = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(10, 10, 10, 10)
+//            setPadding(10, 10, 10, 10)
+            setPadding(0, 10, 10, 0)
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.parseColor("#F0F0F0")) // Light gray background
         }
 
+        // Station Button (🔊)
+        val stationButton = ImageButton(requireContext()).apply {
+            setImageResource(android.R.drawable.ic_lock_silent_mode_off)
+            layoutParams = LinearLayout.LayoutParams(110, 60)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setBackgroundColor(Color.TRANSPARENT)
+            setPadding(0, 0, 0, 0)
+            setColorFilter(Color.BLACK)
+            setOnClickListener { showStationDialog(alarmSettings) }
+        }
+
         // TIME 12:30
         val textView = TextView(requireContext()).apply {
-            text = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
+            text = alarmSettings.prettyPrintTime()
             textSize = 18f
             setPadding(20, 10, 20, 10)
             setOnClickListener { openClockDialog(alarmSettings)}
@@ -168,6 +203,7 @@ class AlarmsFragment : Fragment() {
             setOnClickListener { deleteAndConfirm(alarmSettings, container) }
         }
 
+        container.addView(stationButton)
         container.addView(textView)
 
         // CHECKBOXES
@@ -222,7 +258,7 @@ class AlarmsFragment : Fragment() {
     // DELETE ALARM
     //////////////////////////////////////
     private fun deleteAndConfirm(alarmSettings: AlarmSettings, container: LinearLayout) {
-        val time = String.format("%02d:%02d", alarmSettings.hour, alarmSettings.minute)
+        val time = alarmSettings.prettyPrintTime()
 
         AlertDialog.Builder(requireContext())
             .setTitle("Delete Alarm @ $time")
@@ -236,8 +272,118 @@ class AlarmsFragment : Fragment() {
             .show()
     }
 
+
+
+    private fun onStationSelected(station: Station, alarmSettings: AlarmSettings) {
+        println("station.title $station")
+        println("alarmSettings  $alarmSettings")
+        println("")
+        alarmSettings.station = station
+        Station.saveAStation(stationSharedPreferences, station)
+
+    }
+    private fun onPlayStation(station: Station) {
+        println("Tapped ${station}")
+        println("Playing " + station.title + " @ " + station.url)
+        val x: LinkedHashMap<String, Any?> = Station.getAllStations(stationSharedPreferences)
+        println("x")
+        println(x)
+    }
+
+
+    private fun showStationDialog(alarmSettings: AlarmSettings) {
+        println("CLICKED ICON STATION: " + alarmSettings)
+        val dialogView = layoutInflater.inflate(R.layout.list_stations, null)
+
+        val listView: ListView = dialogView.findViewById(R.id.listView)
+
+        val pos: Int = sharedStationsViewModel.getIndexByTitle(alarmSettings.station?.title)
+        println("showStationDialog: " + alarmSettings)
+        println("station pos: " + pos)
+
+        sharedStationsViewModel.stations.observe(viewLifecycleOwner, Observer { stations: List<Station> ->
+            val adapter = StationAdapter(requireContext(), stations, sharedStationsViewModel, ::onStationSelected, ::onPlayStation, alarmSettings)
+            listView.adapter = adapter
+        })
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Select a Station: " +  alarmSettings.prettyPrintTime())
+            .setView(dialogView)
+            .setPositiveButton("Save") { dialog, which -> handelConfirm(dialog, which) } // right align
+            .setNeutralButton("Cancel") { dialog, _ -> dialog.dismiss() } // left align, both Neg and Pos are right aligned and stupid
+            .show()
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) // Makes it slight wider
+
+        dialog.setOnCancelListener {
+            println("User dismissed the dialog by tapping outside.")
+        }
+    }
+        fun handelConfirm(dialog: DialogInterface, which: Int){
+            println("hello from confirm")
+            val selectedStation = sharedStationsViewModel.selectedStation.value
+            println("GOT STATION: " + selectedStation)
+            println("GOT STATION: " + selectedStation?.title)
+            dialog.dismiss()
+    
+        }
+
+
+
+
+
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+
+        android.R.drawable.ic_delete
+        android.R.drawable.ic_media_play
+        android.R.drawable.ic_menu_add
+        android.R.drawable.ic_input_add
+        android.R.drawable.ic_lock_idle_alarm
+        android.R.drawable.alert_dark_frame
+        android.R.drawable.alert_light_frame
+        android.R.drawable.arrow_down_float
+        android.R.drawable.bottom_bar
+        android.R.drawable.btn_default
+        android.R.drawable.btn_dialog
+        android.R.drawable.btn_minus
+        android.R.drawable.btn_radio
+        android.R.drawable.btn_plus
+        android.R.drawable.alert_light_frame
+        android.R.drawable.ic_lock_idle_alarm
+        android.R.drawable.btn_star
+        android.R.drawable.btn_star_big_off
+        android.R.drawable.btn_star_big_on
+        android.R.drawable.dialog_frame
+        android.R.drawable.dialog_holo_dark_frame
+        android.R.drawable.edit_text
+        android.R.drawable.editbox_background
+        android.R.drawable.editbox_dropdown_dark_frame
+        android.R.drawable.editbox_dropdown_light_frame
+
+        android.R.drawable.ic_dialog_alert
+
+        android.R.drawable.ic_btn_speak_now
+
+        android.R.drawable.ic_dialog_dialer
+
+        android.R.drawable.ic_dialog_email
+
+        android.R.drawable.ic_dialog_info
+
+        android.R.drawable.ic_dialog_map
+
+        android.R.drawable.ic_input_get
+
+        android.R.drawable.ic_media_rew
+        android.R.drawable.ic_menu_day
+        android.R.drawable.ic_menu_directions
+        android.R.drawable.ic_menu_edit
+        android.R.drawable.ic_menu_manage
+        android.R.drawable.ic_btn_speak_now
+
     }
+
 }
+

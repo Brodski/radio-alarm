@@ -32,6 +32,8 @@ data class AlarmSettings(
         "Sunday" to false
     ),
 
+    var station: Station? = null
+
 ) {
 
     companion object {
@@ -82,6 +84,10 @@ data class AlarmSettings(
             }
     }
 
+    public fun prettyPrintTime(): String {
+        val time = String.format("%02d:%02d", this.hour, this.minute)
+        return time
+    }
     public fun getRequestCode(day: String): Int {
         val idX: String = day.toLowerCase() + this.id
         val hashed: Int = idX.hashCode()

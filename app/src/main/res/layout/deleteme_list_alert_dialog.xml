@@ -11,7 +11,7 @@
         android:id="@+id/dialogTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select a Station"
+        android:text="Select dat station"
         android:textSize="20sp"
         android:textStyle="bold"
         android:paddingBottom="10dp"/>

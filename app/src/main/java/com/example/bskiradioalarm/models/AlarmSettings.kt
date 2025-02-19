@@ -99,7 +99,7 @@ data class AlarmSettings(
         // Int max size    =    2147483647
         // Sys.time = long = 1739286196625
     }
-    private fun toJsonStringSerialize(): String {
+    public fun toJsonStringSerialize(): String {
         val json = Json { encodeDefaults = true; prettyPrint = true }
         return json.encodeToString(this)
     }

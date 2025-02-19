@@ -3,17 +3,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.models.Station
-import com.example.bskiradioalarm.ui.dashboard.DashboardViewModel
+import com.example.bskiradioalarm.viewmodels.StationsViewModel
 
 class StationAdapter(
     private val context: Context,
     private val stations: List<Station>,
-    private val viewModel: DashboardViewModel,
+    private val viewModel: StationsViewModel,
     private val onStationSelected: (Station, AlarmSettings) -> Unit,
     private val onPlayStation: (Station) -> Unit,
     private val alarmSettings: AlarmSettings,

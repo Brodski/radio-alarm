@@ -1,14 +1,12 @@
-package com.example.bskiradioalarm.ui.dashboard
+package com.example.bskiradioalarm.viewmodels
 
-import android.content.Context
 import android.content.SharedPreferences
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.bskiradioalarm.models.Station
 
-class DashboardViewModel : ViewModel() {
+class StationsViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
         value = "This is dashboard Fragment"
@@ -44,7 +42,7 @@ class DashboardViewModel : ViewModel() {
             Station("Station15", "https://www.station15.com"),
             Station("Station16", "https://www.station16.com"),
         )
-        
+
         _stations.value = stationList
         stationMap = stationList.associateBy { it.title }
 //        {

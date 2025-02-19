@@ -1,6 +1,7 @@
 package com.example.bskiradioalarm.ui.alarms
 
 
+import PreferencesManagerSingleton
 import StationAdapter
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -29,8 +30,9 @@ import androidx.lifecycle.Observer
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.models.Station
-import com.example.bskiradioalarm.ui.dashboard.DashboardViewModel
-import com.example.bskiradioalarm.utils.CoolConstants
+import com.example.bskiradioalarm.ui.stationsdialog.MenuMainDialog
+import com.example.bskiradioalarm.viewmodels.StationsViewModel
+import com.example.bskiradioalarm.ui.stationsdialog.MenuMainFrag
 import com.example.bskiradioalarm.utils.Scheduler
 import kotlin.collections.LinkedHashMap
 
@@ -39,33 +41,36 @@ class AlarmsFragment : Fragment() {
     private var _binding: FragmentAlarmsBinding? = null
     private val binding get() = _binding!! // only valid between onCreateView and onDestroyView.
 
-    private lateinit var sharedPreferences: SharedPreferences
-    private lateinit var stationSharedPreferences: SharedPreferences
+    private lateinit var alarmsSharedPrefs: SharedPreferences
+    private lateinit var stationsSharedPrefs: SharedPreferences
 
-    // TODO load it up
     private val alarmSettingsMap = mutableMapOf<String, AlarmSettings>()
     private val uiAlarmsMap = mutableMapOf<String, LinearLayout>()
 
     private lateinit var scheduler: Scheduler
 
-//    private val sharedStationsViewModel: DashboardViewModel by activityViewModels()
-    private val sharedStationsViewModel: DashboardViewModel by viewModels()
+    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
+//    private val sharedStationsViewModel: StationsViewModel by viewModels()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        sharedPreferences = requireContext().getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
-        stationSharedPreferences = requireContext().getSharedPreferences("station_setting", Context.MODE_PRIVATE)
+//        alarmsSharedPrefs = requireContext().getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
+        alarmsSharedPrefs = PreferencesManagerSingleton.alarmsSharedPrefs
+        println("!!! AlarmsFragment: " + alarmsSharedPrefs)
+        println("!!! AlarmsFragment: " + alarmsSharedPrefs)
+        println("!!! AlarmsFragment: " + alarmsSharedPrefs)
+        stationsSharedPrefs = requireContext().getSharedPreferences("station_setting", Context.MODE_PRIVATE)
         scheduler = Scheduler(requireContext())
 
-        val sharedStationsViewModel = ViewModelProvider(this).get(DashboardViewModel::class.java)
-        val alarmsViewModel = ViewModelProvider(this).get(AlarmsViewModel::class.java)
+//        val sharedStationsViewModel = ViewModelProvider(this).get(StationsViewModel::class.java)
+//        val alarmsViewModel = ViewModelProvider(this).get(AlarmsViewModel::class.java)
 
         _binding = FragmentAlarmsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textHome
-        alarmsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
+//        val textView: TextView = binding.textHome
+//        alarmsViewModel.text.observe(viewLifecycleOwner) {
+//            textView.text = it
+//        }
 
         binding.addAlarmButton.setOnClickListener {
             addNewAlarm()
@@ -89,7 +94,7 @@ class AlarmsFragment : Fragment() {
         // Init
         println("addNewAlarm() ")
         val newAlarmSettings: AlarmSettings = AlarmSettings()
-        newAlarmSettings.save(sharedPreferences)
+        newAlarmSettings.save(alarmsSharedPrefs)
         addAlarmUi(newAlarmSettings)
 
     }
@@ -120,7 +125,7 @@ class AlarmsFragment : Fragment() {
             // User clicked though
             if (timeSelected) {
                 println("Dialog dismissed AFTER selection")
-                alarmSettings.save(sharedPreferences)
+                alarmSettings.save(alarmsSharedPrefs)
                 alarmSettings.updateTime(scheduler)
                 updateAlarmUi(alarmSettings)
 
@@ -145,9 +150,9 @@ class AlarmsFragment : Fragment() {
     }
 
     private fun loadAlarmsFromStorage() {
-        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(sharedPreferences)
+        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
         for ((keyId, value) in allAlarmsMap) {
-            val jsonStr: String = sharedPreferences.getString(keyId, "").toString()
+            val jsonStr: String = alarmsSharedPrefs.getString(keyId, "").toString()
             val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
             println("(load) loading alarm to ui: ${alarmSettings.id}")
             addAlarmUi(alarmSettings)
@@ -180,7 +185,8 @@ class AlarmsFragment : Fragment() {
             setBackgroundColor(Color.TRANSPARENT)
             setPadding(0, 0, 0, 0)
             setColorFilter(Color.BLACK)
-            setOnClickListener { showStationDialog(alarmSettings) }
+            setOnClickListener { MenuMainDialog.newInstance(alarmSettings.toJsonStringSerialize()).show(parentFragmentManager, "MenuMainTag")}
+//            setOnClickListener { showStationDialog(alarmSettings) }
         }
 
         // TIME 12:30
@@ -248,7 +254,7 @@ class AlarmsFragment : Fragment() {
     private fun onCheckBoxToggled(i: Int, isChecked: Boolean, alarmSettings: AlarmSettings) {
         val dayMap: MutableMap.MutableEntry<String, Boolean> = alarmSettings.daysOfWeek.entries.elementAt(i)
         alarmSettings.daysOfWeek[dayMap.key] = isChecked
-        alarmSettings.save(sharedPreferences)
+        alarmSettings.save(alarmsSharedPrefs)
         val day = dayMap.key
         val isOn = alarmSettings.daysOfWeek[dayMap.key]
         scheduler.setWakeUp2(alarmSettings, day)
@@ -266,66 +272,63 @@ class AlarmsFragment : Fragment() {
             .setPositiveButton("Delete") { _, _ ->
                 (container.parent as? ViewGroup)?.removeView(container)
                 uiAlarmsMap.remove(alarmSettings.id)
-                alarmSettings.delete(sharedPreferences, scheduler)
+                alarmSettings.delete(alarmsSharedPrefs, scheduler)
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-
-
-    private fun onStationSelected(station: Station, alarmSettings: AlarmSettings) {
-        println("station.title $station")
-        println("alarmSettings  $alarmSettings")
-        println("")
-        alarmSettings.station = station
-        Station.saveAStation(stationSharedPreferences, station)
-
-    }
-    private fun onPlayStation(station: Station) {
-        println("Tapped ${station}")
-        println("Playing " + station.title + " @ " + station.url)
-        val x: LinkedHashMap<String, Any?> = Station.getAllStations(stationSharedPreferences)
-        println("x")
-        println(x)
-    }
-
-
-    private fun showStationDialog(alarmSettings: AlarmSettings) {
-        println("CLICKED ICON STATION: " + alarmSettings)
-        val dialogView = layoutInflater.inflate(R.layout.list_stations, null)
-
-        val listView: ListView = dialogView.findViewById(R.id.listView)
-
-        val pos: Int = sharedStationsViewModel.getIndexByTitle(alarmSettings.station?.title)
-        println("showStationDialog: " + alarmSettings)
-        println("station pos: " + pos)
-
-        sharedStationsViewModel.stations.observe(viewLifecycleOwner, Observer { stations: List<Station> ->
-            val adapter = StationAdapter(requireContext(), stations, sharedStationsViewModel, ::onStationSelected, ::onPlayStation, alarmSettings)
-            listView.adapter = adapter
-        })
-
-        val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("Select a Station: " +  alarmSettings.prettyPrintTime())
-            .setView(dialogView)
-            .setPositiveButton("Save") { dialog, which -> handelConfirm(dialog, which) } // right align
-            .setNeutralButton("Cancel") { dialog, _ -> dialog.dismiss() } // left align, both Neg and Pos are right aligned and stupid
-            .show()
-        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) // Makes it slight wider
-
-        dialog.setOnCancelListener {
-            println("User dismissed the dialog by tapping outside.")
-        }
-    }
-        fun handelConfirm(dialog: DialogInterface, which: Int){
-            println("hello from confirm")
-            val selectedStation = sharedStationsViewModel.selectedStation.value
-            println("GOT STATION: " + selectedStation)
-            println("GOT STATION: " + selectedStation?.title)
-            dialog.dismiss()
-    
-        }
+//
+//    private fun showStationDialog(alarmSettings: AlarmSettings) {
+//        println("CLICKED ICON STATION: " + alarmSettings)
+//        val dialogView = layoutInflater.inflate(R.layout.list_stations, null)
+//
+//        val listView: ListView = dialogView.findViewById(R.id.listView)
+//
+//        val pos: Int = sharedStationsViewModel.getIndexByTitle(alarmSettings.station?.title)
+//        println("showStationDialog: " + alarmSettings)
+//        println("station pos: " + pos)
+//
+//        sharedStationsViewModel.stations.observe(viewLifecycleOwner, Observer { stations: List<Station> ->
+//            val adapter = StationAdapter(requireContext(), stations, sharedStationsViewModel, ::onStationSelected, ::onPlayStation, alarmSettings)
+//            listView.adapter = adapter
+//        })
+//
+//        val dialog = AlertDialog.Builder(requireContext())
+//            .setTitle("Select a Station: " +  alarmSettings.prettyPrintTime())
+//            .setView(dialogView)
+//            .setPositiveButton("Save") { dialog, which -> handelConfirm(dialog, which) } // right align
+//            .setNeutralButton("Cancel") { dialog, _ -> dialog.dismiss() } // left align, both Neg and Pos are right aligned and stupid
+//            .show()
+//        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) // Makes it slight wider
+//
+//        dialog.setOnCancelListener {
+//            println("User dismissed the dialog by tapping outside.")
+//        }
+//    }
+//    fun handelConfirm(dialog: DialogInterface, which: Int){
+//        println("hello from confirm")
+//        val selectedStation = sharedStationsViewModel.selectedStation.value
+//        println("GOT STATION: " + selectedStation)
+//        println("GOT STATION: " + selectedStation?.title)
+//        dialog.dismiss()
+//    }
+//
+//    private fun onStationSelected(station: Station, alarmSettings: AlarmSettings) {
+//        println("station.title $station")
+//        println("alarmSettings  $alarmSettings")
+//        println("")
+//        alarmSettings.station = station
+//        Station.saveAStation(stationsSharedPrefs, station)
+//
+//    }
+//    private fun onPlayStation(station: Station) {
+//        println("Tapped ${station}")
+//        println("Playing " + station.title + " @ " + station.url)
+//        val x: LinkedHashMap<String, Any?> = Station.getAllStations(stationsSharedPrefs)
+//        println("x")
+//        println(x)
+//    }
 
 
 

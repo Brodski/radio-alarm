@@ -1,5 +1,6 @@
 package com.example.bskiradioalarm.utils
 
+import PreferencesManagerSingleton
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -96,8 +97,12 @@ class Scheduler(context: Context) {
     }
 
     fun setAllAlarms() {
-        val sharedPreferences = this.context.getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
-        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(sharedPreferences)
+//        val alarmsSharedPrefs = this.context.getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
+        val alarmsSharedPrefs = PreferencesManagerSingleton.alarmsSharedPrefs
+        println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
+        println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
+        println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
+        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
 
         println("@@ Setting alarms for all...: ")
         for ((keyId, value) in allAlarmsMap) {

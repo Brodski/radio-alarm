@@ -20,5 +20,4 @@ class MenuAddStation : DialogFragment() {
             .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
             .create()
     }
-
 }

@@ -2,7 +2,6 @@ package com.example.bskiradioalarm.ui.alarms
 
 
 import PreferencesManagerSingleton
-import StationAdapter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,28 +10,20 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import com.example.bskiradioalarm.databinding.FragmentAlarmsBinding
 import java.util.*
 import android.app.TimePickerDialog
 import android.app.AlertDialog
 import android.content.Context
-import android.content.DialogInterface
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.ListView
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
-import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
-import com.example.bskiradioalarm.models.Station
 import com.example.bskiradioalarm.ui.stationsdialog.MenuMainDialog
 import com.example.bskiradioalarm.viewmodels.StationsViewModel
-import com.example.bskiradioalarm.ui.stationsdialog.MenuMainFrag
 import com.example.bskiradioalarm.utils.Scheduler
 import kotlin.collections.LinkedHashMap
 
@@ -185,7 +176,8 @@ class AlarmsFragment : Fragment() {
             setBackgroundColor(Color.TRANSPARENT)
             setPadding(0, 0, 0, 0)
             setColorFilter(Color.BLACK)
-            setOnClickListener { MenuMainDialog.newInstance(alarmSettings.toJsonStringSerialize()).show(parentFragmentManager, "MenuMainTag")}
+            setOnClickListener { MenuMainDialog(alarmSettings).show(parentFragmentManager, "MenuMainTag")}
+//            setOnClickListener { MenuMainDialog.newInstance(alarmSettings.toJsonStringSerialize()).show(parentFragmentManager, "MenuMainTag")}
 //            setOnClickListener { showStationDialog(alarmSettings) }
         }
 

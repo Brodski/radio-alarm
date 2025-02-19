@@ -42,6 +42,7 @@ class StationAdapter(
         }
 
         // preloaded selected
+        println("selectidx $selectedIndex ADAPTER -alarmSettings.station?.title:  " + alarmSettings.station?.title)
         if (selectedIndex == -1) {
             selectedIndex = viewModel.getIndexByTitle(alarmSettings.station?.title)
         }

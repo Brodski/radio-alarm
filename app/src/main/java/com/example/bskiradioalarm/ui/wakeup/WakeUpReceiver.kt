@@ -22,7 +22,7 @@ class WakeUpReceiver : BroadcastReceiver() {
 
         // UNPACK INTENT
         val requestCode   = intent.getIntExtra("requestCode", -1)
-        val msg           = intent.getStringExtra("msg")
+        val streamUrl           = intent.getStringExtra(RadioService.EXTRA_STREAM_URL) ?: ""
         val id            = intent.getStringExtra("id") ?: "-1"
         val wakeEpochTemp = intent.getStringExtra("wakeEpoch") ?: "-1"
         val wakeCal: Calendar = Calendar.getInstance().apply { timeInMillis = wakeEpochTemp.toLong() }
@@ -31,11 +31,12 @@ class WakeUpReceiver : BroadcastReceiver() {
 //        showNotification(context, title, wakeCal)
 
         // PLAY RADIO
-        val streamUrl = "https://stream1.cprnetwork.org/cpr2_lo"
+//        val streamUrl = "https://stream1.cprnetwork.org/cpr2_lo"
 
-        val radioIntent = Intent(context, RadioService::class.java)
-        radioIntent.putExtra("STREAM_URL", streamUrl)
-        context.startForegroundService(radioIntent)
+//        val radioIntent = Intent(context, RadioService::class.java)
+//        radioIntent.putExtra("STREAM_URL", streamUrl)
+//        context.startForegroundService(radioIntent)
+        RadioService.startAlarm(context, streamUrl)
 
         val alarmIntent = Intent(context, WakeUpActivity::class.java)
 //        alarmIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP

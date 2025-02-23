@@ -1,0 +1,3 @@
+// Things to fix, but not worth the effort.
+
+I user Snoozes alarm, then disables it via deleting the alarm or updating the alarm time/day, it still goes off

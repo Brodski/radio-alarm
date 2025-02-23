@@ -8,6 +8,37 @@
     android:paddingLeft="4dp"
     android:orientation="vertical">
 
+    <!-- Blank Row with Plus Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@android:color/system_neutral2_50"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        >
+        <TextView
+            android:id="@+id/alarmTextView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Add Station"
+            android:textSize="18sp"
+            android:gravity="left"
+            android:paddingLeft="8dp"
+            android:textStyle="italic"
+            />
+        <Button
+            android:id="@+id/newStationButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="+"
+            android:textSize="26sp"
+            android:includeFontPadding="false"
+            android:paddingTop="-14dp"
+            />
+    </LinearLayout>
+
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"

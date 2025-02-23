@@ -1,3 +1,4 @@
+import android.app.AlertDialog
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -13,8 +14,10 @@ class StationAdapter(
     private val context: Context,
     private val stations: List<Station>,
     private val viewModel: StationsViewModel,
+    private val hideFirstN: Int,
     private val onStationSelected: (Station, AlarmSettings) -> Unit,
-    private val onPlayStation: (Station) -> Unit,
+    private val onPlayStation: (Station, String) -> Unit,
+    private val onDeleteLongPress: (Station) -> Unit,
     private val alarmSettings: AlarmSettings,
     ) : BaseAdapter() {
 
@@ -40,11 +43,15 @@ class StationAdapter(
             view = convertView
             viewHolder = view.tag as ViewHolder
         }
+        if (position < hideFirstN) {
+            viewHolder.deleteBtn.visibility = View.GONE
+        } else {
+            viewHolder.deleteBtn.visibility = View.VISIBLE
+        }
 
-        // preloaded selected
-        println("selectidx $selectedIndex ADAPTER -alarmSettings.station?.title:  " + alarmSettings.station?.title)
+        // preloaded UI, highlight selected
         if (selectedIndex == -1) {
-            selectedIndex = viewModel.getIndexByTitle(alarmSettings.station?.title)
+            selectedIndex = viewModel.getIndexByTitle(this.alarmSettings.station?.title)
         }
 
 
@@ -59,37 +66,50 @@ class StationAdapter(
         }
 
         // Update play button
-        if (position == playIndex) {
-            viewHolder.playBtn.setBackgroundColor(ContextCompat.getColor(context, android.R.color.holo_blue_light)) // Playing
-        } else {
+        // Thing we clicked on is currently NOT playing
+        if ((position == playIndex) && viewHolder.playBtn.tag.toString() != "playing") {
+            viewHolder.playBtn.setBackgroundColor(ContextCompat.getColor(context, android.R.color.system_accent2_400)) // Playing
+            viewHolder.playBtn.setImageResource(android.R.drawable.ic_media_pause)
+            viewHolder.playBtn.tag = "playing"
+        }
+        // Thing we clicked on is currently playing (toggle: playing --> paused)
+//        else if ((position == playIndex) && viewHolder.playBtn.tag.toString() == "playing") {
+//
+//        }
+        else {
             viewHolder.playBtn.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent)) // Not playing
+            viewHolder.playBtn.setImageResource(android.R.drawable.ic_media_play)
+            viewHolder.playBtn.tag = "paused"
         }
 
         // Selection click
+        viewHolder.deleteBtn.setOnClickListener {
+            onDeleteLongPress(station)
+        }
         viewHolder.selectBtn.setOnClickListener {
-            selectedIndex = position // Store selected position
+            selectedIndex = position
             viewModel.selectedStation.value = station
             notifyDataSetChanged()    // Refresh UI
 
-            // logic
             onStationSelected(station, alarmSettings)
         }
 
         // Play button click
         viewHolder.playBtn.setOnClickListener {
-            playIndex = position   // Store playing position
+            playIndex = position
             notifyDataSetChanged() // Refresh UI
 
-            // logic
-            onPlayStation(station)
+            onPlayStation(station, viewHolder.playBtn.tag as String)
         }
 
         return view
     }
+
 }
 class ViewHolder(view: View) {
     val stationUiText: TextView = view.findViewById(R.id.itemText)
     val selectBtn: Button = view.findViewById(R.id.selectButton)
     val playBtn: ImageButton = view.findViewById(R.id.toastButton)
+    val deleteBtn: ImageButton = view.findViewById(R.id.deleteStationBtn)
 }
 

@@ -12,8 +12,8 @@ import com.example.bskiradioalarm.viewmodels.StationsViewModel
 
 class MenuMainDialog(alarmSettings: AlarmSettings) : DialogFragment() {
 
-//    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
     private val alarmSettings: AlarmSettings = alarmSettings
+    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
 
 //    companion object {
 //        private const val ARG_ALARM_SETTINGS = "alarmSettings"
@@ -27,10 +27,15 @@ class MenuMainDialog(alarmSettings: AlarmSettings) : DialogFragment() {
 //        }
 //    }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        sharedStationsViewModel.loadStations()
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 //        val jsonStr: String = arguments?.getString(ARG_ALARM_SETTINGS) ?: "No Data"
 //        val alarmSettings: AlarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
-        println("!!! MainMenuDialog: $alarmSettings")
+//        println("!!! MainMenuDialog: $alarmSettings")
 
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Station Options")

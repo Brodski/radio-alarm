@@ -32,20 +32,11 @@ class Scheduler(context: Context) {
     fun testAlarmOnStart() {
         var alarmSettings = AlarmSettings()
         var cal = Calendar.getInstance()
-        var sec = cal.get(Calendar.SECOND)
-        var min = cal.get(Calendar.MINUTE)
-        var hour = cal.get(Calendar.HOUR_OF_DAY)
         var day = cal.get(Calendar.DAY_OF_WEEK)
         var dayName = AlarmSettings.getDayName(day)
-
-//        println("dayName:  $dayName")
-//        println("sec:  $sec")
-//        println("min: $min")
-//        println("hour: $hour")
-//        println("day:  $day")
         alarmSettings.daysOfWeek[dayName] = true
-        alarmSettings.hour = hour
-        alarmSettings.minute = min
+        alarmSettings.hour = cal.get(Calendar.HOUR_OF_DAY)
+        alarmSettings.minute = cal.get(Calendar.MINUTE)
         this.createAlarmIntent(alarmSettings, dayName, true)
     }
 
@@ -54,7 +45,6 @@ class Scheduler(context: Context) {
 
         // SET TIME
         val calendar: Calendar = Calendar.getInstance()
-//        println("TIME: " + calendar.time)
         calendar.set(Calendar.DAY_OF_WEEK, AlarmSettings.getDayAsInt(day))
         calendar.set(Calendar.HOUR_OF_DAY, alarmSettings.hour)
         calendar.set(Calendar.MINUTE, alarmSettings.minute)
@@ -62,7 +52,6 @@ class Scheduler(context: Context) {
 
         val calendarEpsilon = Calendar.getInstance().apply { add(Calendar.MILLISECOND, 20) }
         if ((calendar.before(calendarEpsilon) || Calendar.getInstance().timeInMillis == calendar.timeInMillis)  && !isTest) {
-//            println("ADDING A WEEK!")
             calendar.add(Calendar.WEEK_OF_YEAR, 1) // Move to next week if today’s time has passed
         }
         if (isTest) {
@@ -82,7 +71,7 @@ class Scheduler(context: Context) {
         intent.putExtra("requestCode", requestCodeAlarm)
         intent.putExtra("id", alarmSettings.id)
         intent.putExtra("wakeEpoch", calendar.timeInMillis.toString())
-        intent.putExtra("msg", "USA")
+        intent.putExtra(RadioService.EXTRA_STREAM_URL, alarmSettings.station?.url)
 
         val pendingIntent = PendingIntent.getBroadcast(this.context, requestCodeAlarm, intent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
 
@@ -97,20 +86,19 @@ class Scheduler(context: Context) {
     }
 
     fun setAllAlarms() {
-//        val alarmsSharedPrefs = this.context.getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
         val alarmsSharedPrefs = PreferencesManagerSingleton.alarmsSharedPrefs
         println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
         println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
         println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
-        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
+        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
 
         println("@@ Setting alarms for all...: ")
-        for ((keyId, value) in allAlarmsMap) {
+        for ((keyId, alarmSettings) in allAlarmsMap) {
             println("--------------------------------")
             println("--------    $keyId     ---------")
             println("--------------------------------")
-            val jsonStr = value.toString()
-            val alarmSettings: AlarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
+//            val jsonStr = value.toString()
+//            val alarmSettings: AlarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
             println(alarmSettings)
             for ((dayName, isOn) in alarmSettings.daysOfWeek) {
                 println("$keyId  $dayName $isOn")

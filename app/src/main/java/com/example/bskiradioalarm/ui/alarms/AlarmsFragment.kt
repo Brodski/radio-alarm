@@ -21,6 +21,7 @@ import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.fragment.app.activityViewModels
+import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.ui.stationsdialog.MenuMainDialog
 import com.example.bskiradioalarm.viewmodels.StationsViewModel
@@ -40,28 +41,16 @@ class AlarmsFragment : Fragment() {
 
     private lateinit var scheduler: Scheduler
 
-    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
-//    private val sharedStationsViewModel: StationsViewModel by viewModels()
-
+//    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
+//
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-//        alarmsSharedPrefs = requireContext().getSharedPreferences("alarms_setting", Context.MODE_PRIVATE)
         alarmsSharedPrefs = PreferencesManagerSingleton.alarmsSharedPrefs
-        println("!!! AlarmsFragment: " + alarmsSharedPrefs)
-        println("!!! AlarmsFragment: " + alarmsSharedPrefs)
-        println("!!! AlarmsFragment: " + alarmsSharedPrefs)
         stationsSharedPrefs = requireContext().getSharedPreferences("station_setting", Context.MODE_PRIVATE)
         scheduler = Scheduler(requireContext())
-
-//        val sharedStationsViewModel = ViewModelProvider(this).get(StationsViewModel::class.java)
-//        val alarmsViewModel = ViewModelProvider(this).get(AlarmsViewModel::class.java)
 
         _binding = FragmentAlarmsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-//        val textView: TextView = binding.textHome
-//        alarmsViewModel.text.observe(viewLifecycleOwner) {
-//            textView.text = it
-//        }
 
         binding.addAlarmButton.setOnClickListener {
             addNewAlarm()
@@ -75,14 +64,13 @@ class AlarmsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        sharedStationsViewModel.loadStations()
-}
+        // sharedStationsViewModel.loadStations()
+    }
 
     ///////////////////////////////////////////////
-    // TAP NEW "+" BUTTON 1/2
+    // TAP NEW ALARM "+" BUTTON 1/2
     ///////////////////////////////////////////////
     private fun addNewAlarm() {
-        // Init
         println("addNewAlarm() ")
         val newAlarmSettings: AlarmSettings = AlarmSettings()
         newAlarmSettings.save(alarmsSharedPrefs)
@@ -119,7 +107,6 @@ class AlarmsFragment : Fragment() {
                 alarmSettings.save(alarmsSharedPrefs)
                 alarmSettings.updateTime(scheduler)
                 updateAlarmUi(alarmSettings)
-
             }
             // User canceled
             else {
@@ -141,10 +128,10 @@ class AlarmsFragment : Fragment() {
     }
 
     private fun loadAlarmsFromStorage() {
-        val allAlarmsMap: LinkedHashMap<String, Any?> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
-        for ((keyId, value) in allAlarmsMap) {
-            val jsonStr: String = alarmsSharedPrefs.getString(keyId, "").toString()
-            val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
+        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
+        for ((keyId, alarmSettings) in allAlarmsMap) {
+//            val jsonStr: String = alarmsSharedPrefs.getString(keyId, "").toString()
+//            val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
             println("(load) loading alarm to ui: ${alarmSettings.id}")
             addAlarmUi(alarmSettings)
         }
@@ -270,69 +257,15 @@ class AlarmsFragment : Fragment() {
             .show()
     }
 
-//
-//    private fun showStationDialog(alarmSettings: AlarmSettings) {
-//        println("CLICKED ICON STATION: " + alarmSettings)
-//        val dialogView = layoutInflater.inflate(R.layout.list_stations, null)
-//
-//        val listView: ListView = dialogView.findViewById(R.id.listView)
-//
-//        val pos: Int = sharedStationsViewModel.getIndexByTitle(alarmSettings.station?.title)
-//        println("showStationDialog: " + alarmSettings)
-//        println("station pos: " + pos)
-//
-//        sharedStationsViewModel.stations.observe(viewLifecycleOwner, Observer { stations: List<Station> ->
-//            val adapter = StationAdapter(requireContext(), stations, sharedStationsViewModel, ::onStationSelected, ::onPlayStation, alarmSettings)
-//            listView.adapter = adapter
-//        })
-//
-//        val dialog = AlertDialog.Builder(requireContext())
-//            .setTitle("Select a Station: " +  alarmSettings.prettyPrintTime())
-//            .setView(dialogView)
-//            .setPositiveButton("Save") { dialog, which -> handelConfirm(dialog, which) } // right align
-//            .setNeutralButton("Cancel") { dialog, _ -> dialog.dismiss() } // left align, both Neg and Pos are right aligned and stupid
-//            .show()
-//        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) // Makes it slight wider
-//
-//        dialog.setOnCancelListener {
-//            println("User dismissed the dialog by tapping outside.")
-//        }
-//    }
-//    fun handelConfirm(dialog: DialogInterface, which: Int){
-//        println("hello from confirm")
-//        val selectedStation = sharedStationsViewModel.selectedStation.value
-//        println("GOT STATION: " + selectedStation)
-//        println("GOT STATION: " + selectedStation?.title)
-//        dialog.dismiss()
-//    }
-//
-//    private fun onStationSelected(station: Station, alarmSettings: AlarmSettings) {
-//        println("station.title $station")
-//        println("alarmSettings  $alarmSettings")
-//        println("")
-//        alarmSettings.station = station
-//        Station.saveAStation(stationsSharedPrefs, station)
-//
-//    }
-//    private fun onPlayStation(station: Station) {
-//        println("Tapped ${station}")
-//        println("Playing " + station.title + " @ " + station.url)
-//        val x: LinkedHashMap<String, Any?> = Station.getAllStations(stationsSharedPrefs)
-//        println("x")
-//        println(x)
-//    }
-
-
-
-
-
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
 
         android.R.drawable.ic_delete
+        android.R.drawable.stat_notify_error
+
         android.R.drawable.ic_media_play
+        android.R.drawable.ic_media_pause
         android.R.drawable.ic_menu_add
         android.R.drawable.ic_input_add
         android.R.drawable.ic_lock_idle_alarm
@@ -377,6 +310,23 @@ class AlarmsFragment : Fragment() {
         android.R.drawable.ic_menu_edit
         android.R.drawable.ic_menu_manage
         android.R.drawable.ic_btn_speak_now
+
+        R.drawable.ic_notifications_black_24dp
+        R.drawable.ic_home_black_24dp
+        R.drawable.ic_dashboard_black_24dp
+        androidx.appcompat.R.drawable.abc_ab_share_pack_mtrl_alpha
+        androidx.appcompat.R.drawable.test_level_drawable
+
+        androidx.appcompat.R.drawable.abc_scrubber_control_to_pressed_mtrl_000
+
+        androidx.appcompat.R.drawable.tooltip_frame_light
+
+        androidx.appcompat.R.drawable.btn_radio_off_to_on_mtrl_animation
+
+        android.R.drawable.ic_menu_edit
+
+        android.R.drawable.btn_dialog
+
 
     }
 

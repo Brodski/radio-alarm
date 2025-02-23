@@ -1,5 +1,6 @@
 package com.example.bskiradioalarm
 
+import PreferencesManagerSingleton
 import android.app.AlertDialog
 import android.app.Notification
 import android.app.NotificationChannel
@@ -54,6 +55,7 @@ class MainActivity : AppCompatActivity() {
         createNotificationChannel()
         // TODO
         // NOT GOOD CODE JUST TESTING
+//        hardDeleteStations()
         val scheduler: Scheduler = Scheduler(this)
 //        scheduler.testAlarmOnStart()
         Log.e("BootReceiver", "test123 BOOT ACTION COMPLETED!!!!!!")
@@ -79,14 +81,30 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    //////////////////////////////
-    ////      HARD DELETE     ////
-    //////////////////////////////
+    private fun hardDeleteAlarms() {
+        hardDelete(PreferencesManagerSingleton.alarmsSharedPrefs)
+    }
+    private fun hardDeleteStations() {
+        hardDelete(PreferencesManagerSingleton.stationsSharedPrefs)
+    }
+
+    /////////////////////////////////////
+    ////      HARD DELETE ALARMS     ////
+    ///////////////////////////////////
     private fun hardDelete(sharedPreferences: SharedPreferences) {
         val keysToDelete = sharedPreferences.all.keys.toList()
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println(keysToDelete)
         val editor = sharedPreferences.edit()
         for (key in keysToDelete) {
             editor.remove(key)
+            println("RIP $key")
         }
         editor.apply() // Apply all changes at once
     }

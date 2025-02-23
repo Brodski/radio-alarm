@@ -1,9 +1,11 @@
 package com.example.bskiradioalarm.viewmodels
 
+import PreferencesManagerSingleton
 import android.content.SharedPreferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.models.Station
 
 class StationsViewModel : ViewModel() {
@@ -13,43 +15,41 @@ class StationsViewModel : ViewModel() {
     }
 
     private val _stations = MutableLiveData<List<Station>>()
-    private var stationMap: Map<String, Station> = emptyMap()
+    var stationMap: Map<String, Station> = emptyMap()
     val selectedStation = MutableLiveData<Station?>()
     private val sharedPreferences: SharedPreferences? = null
 
-
     val stations: LiveData<List<Station>> get() = _stations
 
-    fun loadStations() {
-        if (_stations.value != null) {
-            println("NOT NULLLL STATIONS")
-        }
-        val stationList = listOf(
-            Station("Station1", "https://www.station1.com"),
-            Station("Station2", "https://www.station2.com"),
-            Station("Station3", "https://www.station3.com"),
-            Station("Station4", "https://www.station4.com"),
-            Station("Station5", "https://www.station5.com"),
-            Station("Station6", "https://www.station6.com"),
-            Station("Station7", "https://www.station7.com"),
-            Station("Station8", "https://www.station8.com"),
-            Station("Station9", "https://www.station9.com"),
-            Station("Station10", "https://www.station10.com"),
-            Station("Station11", "https://www.station11.com"),
-            Station("Station12", "https://www.station12.com"),
-            Station("Station13", "https://www.station13.com"),
-            Station("Station14", "https://www.station14.com"),
-            Station("Station15", "https://www.station15.com"),
-            Station("Station16", "https://www.station16.com"),
-        )
+    val stationPreloadedList: List<Station> = listOf(
+        Station("CPR Classical", "https://stream1.cprnetwork.org/cpr2_lo", "idStation1"),
+        Station("KUVO Jazz", "https://kuvo.streamguys1.com/kuvo-mp3-128", "idStation2"),
+        Station("Station3", "https://www.station3.com", "idStation3"),
+        Station("Station4", "https://www.station4.com", "idStation4"),
+        Station("Station5", "https://www.station5.com", "idStation5"),
+        Station("Station6", "https://www.station6.com", "idStation6"),
+        Station("Station7", "https://www.station7.com", "idStation7"),
+        Station("Station8", "https://www.station8.com", "idStation8"),
+        Station("Station9", "https://www.station9.com", "idStation9"),
+        Station("Station10", "https://www.station10.com", "idStation10"),
+        Station("Station11", "https://www.station11.com", "idStation11"),
+        Station("Station12", "https://www.station12.com", "idStation12"),
+        Station("Station13", "https://www.station13.com", "idStation13"),
+        Station("Station14", "https://www.station14.com", "idStation14"),
+        Station("Station15", "https://www.station15.com", "idStation15"),
+        Station("Station16", "https://www.station16.com", "idStation16"),
+    )
 
-        _stations.value = stationList
-        stationMap = stationList.associateBy { it.title }
-//        {
-//            "Station1" -> Station(title="Station1", url="https://www.station1.com"),
-//            "Station2" -> Station(title="Station2", url="https://www.station2.com"),
-//            "Station3" -> Station(title="Station3", url="https://www.station3.com")
+    fun loadStations() {
+
+        val allStationsStorage: LinkedHashMap<String, Station> = Station.getAllStations(PreferencesManagerSingleton.stationsSharedPrefs)
+//        for ((keyId, valStation) in allStationsMap) {
+//            println("StationsViewModel deserialize: station: " + valStation)
 //        }
+        val combinedList: List<Station> = this.stationPreloadedList + allStationsStorage.values
+
+        _stations.value = combinedList
+        stationMap = this.stationPreloadedList.associateBy { it.id }
     }
 
     fun getStationByTitle(title: String): Station? {

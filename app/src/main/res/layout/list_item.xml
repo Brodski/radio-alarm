@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="60dp"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingRight="0dp"
+    android:paddingLeft="0dp"
+    >
 
     <TextView
         android:id="@+id/itemText"
@@ -11,18 +15,36 @@
         android:layout_weight="1"
         android:layout_height="wrap_content"
         android:textSize="18sp"
-        android:padding="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingRight="0dp"
+        android:paddingLeft="2dp"
         android:text="Item Name"/>
 
+    <!-- Delete Button (X Icon) -->
+    <ImageButton
+        android:id="@+id/deleteStationBtn"
+        android:layout_width="25dp"
+        android:layout_height="match_parent"
+        android:scaleType="centerInside"
+        android:src="@android:drawable/ic_delete"
+        android:tint="@color/design_default_color_error"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Delete Item"/>
+
+    <!-- "SELECT" station -->
     <Button
         android:id="@+id/selectButton"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:layout_marginRight="8dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginLeft="8dp"
+
         android:paddingLeft="0dp"
         android:paddingRight="0dp"
         android:text="Select" />
 
+    <!-- Play Station ▶️ -->
     <ImageButton
         android:id="@+id/toastButton"
         android:layout_width="45dp"
@@ -31,7 +53,9 @@
         android:tint="@color/black"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Play Button"
+        android:tag="paused"
         />
+
 
 <!--    android:backgroundTint="@color/design_default_color_primary"-->
 <!--        android:background="?attr/selectableItemBackgroundBorderless"-->

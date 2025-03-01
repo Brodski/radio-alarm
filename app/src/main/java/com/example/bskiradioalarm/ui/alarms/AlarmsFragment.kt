@@ -17,9 +17,11 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.media.AudioManager
 import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
@@ -79,7 +81,7 @@ class AlarmsFragment : Fragment() {
     }
 
     ///////////////////////////////////////////////
-    // TAP TIME "9:00" BUTTON
+    // TAP TIME "9:00" BUTTON EVENT
     ///////////////////////////////////////////////
     private fun openClockDialog(alarmSettings: AlarmSettings, isNew: Boolean = false) {
         // Init Clock-dialog & display
@@ -93,7 +95,6 @@ class AlarmsFragment : Fragment() {
             requireContext(),
             android.R.style.Theme_DeviceDefault_Dialog,
             { view, selectedHour, selectedMinute  ->
-                println("clicked in clock")
                 timeSelected = true
                 alarmSettings.hour = selectedHour
                 alarmSettings.minute = selectedMinute
@@ -107,6 +108,18 @@ class AlarmsFragment : Fragment() {
                 alarmSettings.save(alarmsSharedPrefs)
                 alarmSettings.updateTime(scheduler)
                 updateAlarmUi(alarmSettings)
+
+//                val audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager
+//                val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+//                val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+
+//                alarmSettings.doQoLAlarmCheck(requireContext())
+                 alarmSettings.doQoLAlarmCheck(requireContext(), requireView())
+//                val dayHourMin: Triple<Int,Int,Int> = alarmSettings.findNextAlarmEvent()
+//                Toast.makeText(requireContext(), "Next in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min", Toast.LENGTH_LONG).show()
+//
+//                println( "Alarm Volume: $currentVolume / $maxVolume")
+//                println(" \uD83D\uDD0A Settings → Sound → Alarm Volume")
             }
             // User canceled
             else {
@@ -237,6 +250,8 @@ class AlarmsFragment : Fragment() {
         val day = dayMap.key
         val isOn = alarmSettings.daysOfWeek[dayMap.key]
         scheduler.setWakeUp2(alarmSettings, day)
+
+        alarmSettings.doQoLAlarmCheck(requireContext(), requireView())
     }
 
     //////////////////////////////////////

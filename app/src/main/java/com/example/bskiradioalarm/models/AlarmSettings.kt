@@ -1,16 +1,19 @@
 package com.example.bskiradioalarm.models
 
-import android.content.SharedPreferences
-import com.example.bskiradioalarm.utils.Scheduler
 //import java.time.LocalTime
+import android.app.AlertDialog
+import android.content.Context
+import android.content.SharedPreferences
+import android.media.AudioManager
+import android.view.View
+import android.widget.TextView
+import android.widget.Toast
+import com.example.bskiradioalarm.utils.Scheduler
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.format.TextStyle
+import kotlinx.serialization.json.Json
 import java.util.Calendar
-import java.util.Locale
 
 //import java.util.UUID
 
@@ -120,11 +123,6 @@ data class AlarmSettings(
         val title: String = if (prettyList.isNullOrEmpty()) {"Disabled"} else {prettyList.joinToString(", ")}
         return title
     }
-//    public fun getAltId(): Int {
-//        return this.id.takeLast(9).toInt()
-//        // Int max size    =    2147483647
-//        // Sys.time = long = 1739286196625
-//    }
 
     public fun toJsonStringSerialize(): String {
         val json = Json { encodeDefaults = true; prettyPrint = true }
@@ -157,6 +155,97 @@ data class AlarmSettings(
             scheduler.cancelAlarm(this, dayKey) // We cancel it or cancel nothing.
             scheduler.setWakeUp2(this, dayKey)  // Then enable it (but only if 'isOn')
         }
+    }
+
+    fun doQoLAlarmCheck(context: Context, view: View) {
+        val dayHourMin: Triple<Int,Int,Int> = this.findNextAlarmEvent()
+        var nextAlarmMsg = ""
+        if (dayHourMin.first == 0) {
+            nextAlarmMsg = "Next in ${dayHourMin.second} hours, ${dayHourMin.third} min"
+        }
+        else {
+            nextAlarmMsg = "Next in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min"
+        }
+
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+
+        if (currentVolume == 1) {
+            nextAlarmMsg = " \uD83D\uDD07Alarm is SILENT!" + "\nSettings → Sound → Alarm Volume\n" + nextAlarmMsg // 🔊
+            val snackbar: Snackbar = Snackbar.make(view, nextAlarmMsg, Snackbar.LENGTH_INDEFINITE)
+            val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+            snackbar.setAction("Dismiss") { snackbar.dismiss() }
+            textView.maxLines = 5
+            snackbar.show()
+        }
+        else {
+            Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_LONG).show()
+        }
+        println( "Alarm Volume: $currentVolume / $maxVolume")
+        println("\uD83D\uDD0A Settings → Sound → Alarm Volume")
+    }
+
+    fun findNextAlarmEvent(): Triple<Int, Int, Int> {
+        // Create a Calendar instance for next Tuesday at 12:10 PM
+        var nowCal = Calendar.getInstance()
+        var nextAlert = Calendar.getInstance() // Will set time to 12:10 PM
+
+        nextAlert[Calendar.HOUR_OF_DAY] = this.hour
+        nextAlert[Calendar.MINUTE] = this.minute
+
+        println("+=========== START ============+")
+        for (i in 1..7) {
+            val nextDayNum = nextAlert[Calendar.DAY_OF_WEEK] // 7 = Saturday
+            val nextDayName = AlarmSettings.getDayName(nextDayNum) // Saturday
+            val nextIsOn = this.daysOfWeek[nextDayName]
+            println("nextDayNum: " + nextDayName + " nextDayName: " + nextDayName + " nextIsOn: " +  nextIsOn)
+
+            if (i == 1 && nextIsOn == true && nextAlert.before(nowCal)) { // we set hours and minutes few lines ago
+                println("continue...")
+                nextAlert.add(Calendar.DAY_OF_MONTH, 1);
+                continue
+            }
+            if (nextIsOn == true){
+                println("---> nextIsOn = TRUE")
+                println("---> nextIsOn = TRUE")
+                println("---> nextIsOn = TRUE")
+                break
+            }
+
+            nextAlert.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        println("+=========== END =============+")
+
+
+//        while (nextAlert[Calendar.DAY_OF_WEEK] != Calendar.TUESDAY) {
+//            System.out.println("nextAlert.DAY_OF_WEEK: " + nextAlert[Calendar.DAY_OF_WEEK]);
+//            nextAlert.add(Calendar.DAY_OF_MONTH, 1);
+//        }
+
+        // Calculate the difference in milliseconds
+        val diffMillis = nextAlert.timeInMillis - nowCal.timeInMillis
+
+        // Convert to hours and minutes
+        val msInSec = 1000
+        val secInMin = 60
+        val minInHour = 60
+        val days = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+        val hours = (diffMillis / (1000 * 60 * 60)).toInt() % 24
+        val minutes = (diffMillis / (1000 * 60)).toInt() % 60
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        println("days: $days. hours $hours. min $minutes")
+        return Triple(days, hours, minutes)
     }
 
 }

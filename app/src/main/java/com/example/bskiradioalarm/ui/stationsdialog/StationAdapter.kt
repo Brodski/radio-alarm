@@ -1,4 +1,3 @@
-import android.app.AlertDialog
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -8,7 +7,7 @@ import androidx.core.content.ContextCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.models.Station
-import com.example.bskiradioalarm.viewmodels.StationsViewModel
+import com.example.bskiradioalarm.ui.stationsdialog.StationsViewModel
 
 class StationAdapter(
     private val context: Context,
@@ -19,6 +18,7 @@ class StationAdapter(
     private val onPlayStation: (Station, String) -> Unit,
     private val onDeleteLongPress: (Station) -> Unit,
     private val alarmSettings: AlarmSettings,
+    private val alarmsCurrentStation: Station?
     ) : BaseAdapter() {
 
     // we need this, stupid that I have to write it -.- yet never call it
@@ -28,15 +28,15 @@ class StationAdapter(
 
     private var selectedIndex: Int = -1
     private var playIndex: Int = -1
-    private val playList = mutableListOf<ImageButton>()
-    private val viewList = mutableListOf<View>()
+
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+
         val viewHolder: ViewHolder
         val view: View
 
         if (convertView == null) {
-            view = LayoutInflater.from(context).inflate(R.layout.list_item, parent, false)
+            view = LayoutInflater.from(context).inflate(R.layout.popup_item_choose_station, parent, false)
             viewHolder = ViewHolder(view)
             view.tag = viewHolder
         } else {
@@ -51,7 +51,7 @@ class StationAdapter(
 
         // preloaded UI, highlight selected
         if (selectedIndex == -1) {
-            selectedIndex = viewModel.getIndexByTitle(this.alarmSettings.station?.title)
+            selectedIndex = viewModel.getIndexByTitle(alarmsCurrentStation?.title)
         }
 
 
@@ -73,9 +73,6 @@ class StationAdapter(
             viewHolder.playBtn.tag = "playing"
         }
         // Thing we clicked on is currently playing (toggle: playing --> paused)
-//        else if ((position == playIndex) && viewHolder.playBtn.tag.toString() == "playing") {
-//
-//        }
         else {
             viewHolder.playBtn.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent)) // Not playing
             viewHolder.playBtn.setImageResource(android.R.drawable.ic_media_play)

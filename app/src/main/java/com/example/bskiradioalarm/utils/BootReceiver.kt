@@ -11,6 +11,9 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action == Intent.ACTION_BOOT_COMPLETED) {
             println("BOOT ACTION COMPLETED!!!!!!")
+            println("BOOT ACTION COMPLETED!!!!!!")
+            println("BOOT ACTION COMPLETED!!!!!!")
+            println("BOOT ACTION COMPLETED!!!!!!")
             Log.e("BootReceiver", "BOOT ACTION COMPLETED!!!!!!")
             Log.e("BootReceiver", "BOOT ACTION COMPLETED!!!!!!")
             Log.e("BootReceiver", "BOOT ACTION COMPLETED!!!!!!")
@@ -22,12 +25,9 @@ class BootReceiver : BroadcastReceiver() {
             Log.e("BootReceiver", "BOOT ACTION COMPLETED!!!!!!")
 
             // Reschedule alarms here
-//            rescheduleAlarms(context)
+            var scheduler: Scheduler = Scheduler(context)
+            println("BOOT RECEIVER")
+            scheduler.setAllAlarms()
         }
-    }
-
-    private fun rescheduleAlarms(context: Context) {
-        var scheduler: Scheduler = Scheduler(context)
-        scheduler.setAllAlarms()
     }
 }

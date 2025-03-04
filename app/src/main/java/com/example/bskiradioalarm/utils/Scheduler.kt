@@ -19,95 +19,119 @@ class Scheduler(context: Context) {
     private val context: Context = context
 
     public fun setWakeUp2(alarmSettings: AlarmSettings, day: String) {
-//        println("(setWakeUp2) " + (day.toLowerCase() + alarmSettings.id))
         val isOn: Boolean = alarmSettings.daysOfWeek[day] == true
         if (!isOn) {
             this.cancelAlarm(alarmSettings, day)
         }
         if (isOn) {
+            println("^^^^^^^^^ createAlarmIntent 1  ^^^^^^^^^")
             this.createAlarmIntent(alarmSettings, day)
         }
     }
 
-    fun testAlarmOnStart() {
-        var alarmSettings = AlarmSettings()
-        var cal = Calendar.getInstance()
-        var day = cal.get(Calendar.DAY_OF_WEEK)
-        var dayName = AlarmSettings.getDayName(day)
-        alarmSettings.daysOfWeek[dayName] = true
-        alarmSettings.hour = cal.get(Calendar.HOUR_OF_DAY)
-        alarmSettings.minute = cal.get(Calendar.MINUTE)
-        this.createAlarmIntent(alarmSettings, dayName, true)
-    }
+//    fun testAlarmOnStart() {
+//        var alarmSettings = AlarmSettings()
+//        var cal = Calendar.getInstance()
+//        var day = cal.get(Calendar.DAY_OF_WEEK)
+//        var dayName = AlarmSettings.getDayName(day)
+//        alarmSettings.daysOfWeek[dayName] = true
+//        alarmSettings.hour = cal.get(Calendar.HOUR_OF_DAY)
+//        alarmSettings.minute = cal.get(Calendar.MINUTE)
+//        println("^^^^^^^^^ createAlarmIntent 2  ^^^^^^^^^")
+//        this.createAlarmIntent(alarmSettings, dayName)
+//    }
 
-    fun createAlarmIntent(alarmSettings: AlarmSettings, day: String, isTest: Boolean = false){
+    fun createSnoozeIntent(alarmSettings: AlarmSettings, day: String, snoozeStationRefId: String) {
+        this.createAlarmIntent(alarmSettings, day, snoozeStationRefId)
+    }
+    
+    fun createAlarmIntent(alarmSettings: AlarmSettings, day: String, snoozeStationRefId: String = ""){
+        var isTest = false
         val requestCodeAlarm = alarmSettings.getRequestCode(day)
 
         // SET TIME
-        val calendar: Calendar = Calendar.getInstance()
-        calendar.set(Calendar.DAY_OF_WEEK, AlarmSettings.getDayAsInt(day))
-        calendar.set(Calendar.HOUR_OF_DAY, alarmSettings.hour)
-        calendar.set(Calendar.MINUTE, alarmSettings.minute)
-        calendar.set(Calendar.SECOND, 0)
+        val alarmAsCal: Calendar = Calendar.getInstance()
+        alarmAsCal.set(Calendar.DAY_OF_WEEK, AlarmSettings.getDayAsInt(day))
+        alarmAsCal.set(Calendar.HOUR_OF_DAY, alarmSettings.hour)
+        alarmAsCal.set(Calendar.MINUTE, alarmSettings.minute)
+        alarmAsCal.set(Calendar.SECOND, 0)
 
         val calendarEpsilon = Calendar.getInstance().apply { add(Calendar.MILLISECOND, 20) }
-        if ((calendar.before(calendarEpsilon) || Calendar.getInstance().timeInMillis == calendar.timeInMillis)  && !isTest) {
-            calendar.add(Calendar.WEEK_OF_YEAR, 1) // Move to next week if today’s time has passed
+        if ((alarmAsCal.before(calendarEpsilon) || Calendar.getInstance().timeInMillis == alarmAsCal.timeInMillis)  && !isTest) {
+            println("WTF is this shit????!")
+            alarmAsCal.add(Calendar.WEEK_OF_YEAR, 1) // Move to next week if today’s time has passed
         }
         if (isTest) {
             println("TEST: +20 sec")
             val cal2: Calendar = Calendar.getInstance()
             val nowSec: Int = cal2.get(Calendar.SECOND)
             if ( nowSec >= 53) {
-                calendar.add(Calendar.MINUTE, 1 )
+                alarmAsCal.add(Calendar.MINUTE, 1 )
             }
             else {
-                calendar.set(Calendar.SECOND, nowSec + 7)
+                alarmAsCal.set(Calendar.SECOND, nowSec + 7)
             }
         }
 
         // BUILD INTENT
-        val intent = Intent(this.context, WakeUpReceiver::class.java)
-        intent.putExtra("requestCode", requestCodeAlarm)
-        intent.putExtra("id", alarmSettings.id)
-        intent.putExtra("wakeEpoch", calendar.timeInMillis.toString())
-        intent.putExtra(RadioService.EXTRA_STREAM_URL, alarmSettings.station?.url)
+        val wakeUpintent = Intent(this.context, WakeUpReceiver::class.java)
 
-        val pendingIntent = PendingIntent.getBroadcast(this.context, requestCodeAlarm, intent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
+        wakeUpintent.putExtra(RadioService.EXTRA_STATION_REF_ID, alarmSettings.stationRef)
+        wakeUpintent.putExtra(RadioService.EXTRA_ALARM_ID, alarmSettings.id)
+        wakeUpintent.putExtra("requestCode", requestCodeAlarm)
+        wakeUpintent.putExtra("wakeEpoch", alarmAsCal.timeInMillis.toString())
+        wakeUpintent.putExtra("unique_id", System.currentTimeMillis())
+        wakeUpintent.putExtra("snoozeStationRefId", snoozeStationRefId)
+
+        println("=====================    BEGIN  =========================")
+        println("===== Creating EXTRAS - .EXTRA_STATION_REF_ID: " + alarmSettings.stationRef)
+        println("===== Creating EXTRAS - .EXTRA_ALARM_ID: " + alarmSettings.id)
+        println("===== Creating EXTRAS - requestCode: " +  requestCodeAlarm)
+        println("===== Creating EXTRAS - wakeEpoch: " +  alarmAsCal.timeInMillis.toString())
+        println("===== Creating EXTRAS - unique_id: " +  System.currentTimeMillis())
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
+
+
+//        println("===== Creating Alarm Intent. alarmSettings.id: " + alarmSettings.id )
+//        println("===== Creating Alarm Intent. day: " + day )
+//        println("===== Creating Alarm Intent. requestCode: $requestCodeAlarm")
+//        println("===== Creating Alarm Intent. stationRef: ${alarmSettings.stationRef}")
+//        println("===== Creating Alarm Intent. snoozeStationRefId: $snoozeStationRefId")
+
+        val pendingIntent = PendingIntent.getBroadcast(this.context, requestCodeAlarm, wakeUpintent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
 
         // SEND INTENT
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            // permission check
             this.context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
         }
         else {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            // send it
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmAsCal.timeInMillis, pendingIntent)
         }
-        println("INTENT CREATED set for: ${calendar.time} ")
+        println("INTENT CREATED set for: ${alarmAsCal.time} ")
+        println("=====================    END    =========================")
     }
 
+    // Called by the OS at phone's power-on
+    // Also called by MainActivity but I think that is redundant/pointless
     fun setAllAlarms() {
         val alarmsSharedPrefs = PreferencesManagerSingleton.alarmsSharedPrefs
-        println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
-        println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
-        println("!!! SCHEDULER FRAGMENT: " + alarmsSharedPrefs)
-        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
+        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted()
 
-        println("@@ Setting alarms for all...: ")
         for ((keyId, alarmSettings) in allAlarmsMap) {
-            println("--------------------------------")
-            println("--------    $keyId     ---------")
-            println("--------------------------------")
-//            val jsonStr = value.toString()
-//            val alarmSettings: AlarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
-            println(alarmSettings)
+            println("(setAllAlarms) --------    id: $keyId     ---------")
+            println("(setAllAlarms) --------    stationRef: " + alarmSettings.stationRef)
             for ((dayName, isOn) in alarmSettings.daysOfWeek) {
-                println("$keyId  $dayName $isOn")
+//                println("$keyId  $dayName $isOn")
                 if (isOn) {
+//                    println("(setAllAlarms) ^^^^^^^^ createAlarmIntent 3 id: "+ alarmSettings.id + " ^^^^^^^^^")
                     this.createAlarmIntent(alarmSettings, dayName)
                 }
-
             }
-
         }
     }
 
@@ -116,10 +140,10 @@ class Scheduler(context: Context) {
         val requestCode: Int = alarmSettings.getRequestCode(day)
         val possibleIntent = PendingIntent.getBroadcast(this.context, requestCode, intent, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_MUTABLE) //if no such PendingIntent exists, it returns null without creating a new one.
         if (possibleIntent == null) { // probably shouldnt happen
-            println("INTENT CANCEL DOES NOT EXIT. requestCode: " + requestCode)
+//            println("INTENT CANCEL DOES NOT EXIT. requestCode: " + requestCode)
         }
         else {
-            println("INTENT CANCELED. requestCode: " + requestCode)
+//            println("INTENT CANCELED. requestCode: " + requestCode)
             alarmManager.cancel(possibleIntent) // Cancels the alarm
             possibleIntent.cancel()
         }

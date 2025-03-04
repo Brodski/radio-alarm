@@ -21,6 +21,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.bskiradioalarm.databinding.ActivityMainBinding
+import com.example.bskiradioalarm.utils.CoolConstantData
 import com.example.bskiradioalarm.utils.Scheduler
 
 class MainActivity : AppCompatActivity() {
@@ -48,25 +49,43 @@ class MainActivity : AppCompatActivity() {
         // Boilerplate above
         // My code below
         /////////////////////////////////////////////////////////////
-        println("MAIN ACTIIVTY")
+        println("MAIN ACTIIVTY A")
 
         // Init storage
 
         createNotificationChannel()
         // TODO
+        // HERE
         // NOT GOOD CODE JUST TESTING
 //        hardDeleteStations()
         val scheduler: Scheduler = Scheduler(this)
+        initStations()
 //        scheduler.testAlarmOnStart()
-        Log.e("BootReceiver", "test123 BOOT ACTION COMPLETED!!!!!!")
 //        checkAndRequestOverlayPermission()
-
-//        scheduler.setAllAlarms()
+        println("MAIN ACTIIVTY B")
+        scheduler.setAllAlarms()
     }
 
-    //////////////////////////////
+
+
+    /////////////////////////////////////
+    /////////////////////////////////////
+    /////////////////////////////////////
+    private fun initStations() {
+        for (station in CoolConstantData.stationPreloadedList) {
+//            println("??? " + station.id + " ??? ")
+            if (PreferencesManagerSingleton.stationsSharedPrefs.contains(station.id)) {
+//                println("☑ already saved")
+            } else {
+//                println("❌ missing. will save")
+                station.save()
+            }
+        }
+    }
+
+    /////////////////////////////////////
     ////      INIT NOTIFICATION      ////
-    //////////////////////////////
+    /////////////////////////////////////
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(

@@ -11,47 +11,70 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
+import com.example.bskiradioalarm.models.Station
 import com.example.bskiradioalarm.utils.RadioService
 import com.example.bskiradioalarm.utils.Scheduler
 import java.util.Calendar
 
 class WakeUpReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        println("------------ ALARM GOING OFF -------------")
-        println(intent)
 
         // UNPACK INTENT
-        val requestCode   = intent.getIntExtra("requestCode", -1)
-        val streamUrl           = intent.getStringExtra(RadioService.EXTRA_STREAM_URL) ?: ""
-        val id            = intent.getStringExtra("id") ?: "-1"
-        val wakeEpochTemp = intent.getStringExtra("wakeEpoch") ?: "-1"
-        val wakeCal: Calendar = Calendar.getInstance().apply { timeInMillis = wakeEpochTemp.toLong() }
-        val title = "Alarm: $requestCode"
+        val DEFAULT_STATION_ID = RadioService.DEFAULT_RADIO_REF_ID
 
-//        showNotification(context, title, wakeCal)
+        val requestCode         = intent.getIntExtra("requestCode", -1)
+        val alarmId             = intent.getStringExtra(RadioService.EXTRA_ALARM_ID) ?: "-123"
+        val wakeEpochTemp       = intent.getStringExtra("wakeEpoch") ?: "-1"
+        val snoozeStationRefId  = intent.getStringExtra("snoozeStationRefId")
+        val EXTRA_STATION_REF_ID = intent.getStringExtra(RadioService.EXTRA_STATION_REF_ID)
+
+
+
+
+        val currentAlarmCal: Calendar = Calendar.getInstance().apply { timeInMillis = wakeEpochTemp.toLong() }
 
         // PLAY RADIO
-//        val streamUrl = "https://stream1.cprnetwork.org/cpr2_lo"
+        println("---------------- ALARM GOING OFF -----------------")
+        println("----------- FOUND EXTRAS: alarmId: $alarmId ------------")
+        println("----------- FOUND EXTRAS: REQUESTCODE: $requestCode ------------")
+        println("----------- FOUND EXTRAS: snoozeStationRefId: $snoozeStationRefId ------------")
+        println("----------- FOUND EXTRAS: EXTRA_STATION_REF_ID: $EXTRA_STATION_REF_ID ------------")
+        var alarmSettings = AlarmSettings.getAlarmById(alarmId)
 
-//        val radioIntent = Intent(context, RadioService::class.java)
-//        radioIntent.putExtra("STREAM_URL", streamUrl)
-//        context.startForegroundService(radioIntent)
-        RadioService.startAlarm(context, streamUrl)
+        var isSnooze = false
+        if (!snoozeStationRefId.toString().isNullOrBlank()) {
+            println("---------- alarm triggered by SNOOZE")
+            isSnooze = true // alarm triggered by a snooze
+        }
+        if (alarmSettings == null) {
+            alarmSettings = AlarmSettings()
+            alarmSettings.stationRef = if (isSnooze) snoozeStationRefId.toString() else DEFAULT_STATION_ID
+            println("---------- alarmSettings IS NULL @ ID=  " +alarmId)
+            println("---------- alarmSettings using stationRef: " + alarmSettings.stationRef)
+        }
+
+
+        RadioService.startAlarm(context, alarmSettings, isSnooze)
 
         val alarmIntent = Intent(context, WakeUpActivity::class.java)
-//        alarmIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        // alarmIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+
 //        wakeUpScreen(context)
-        context.startActivity(alarmIntent)
+//
+//        context.startActivity(alarmIntent)
 
-
-        println("REPEAT NEXT WEEK = OFF")
-        println("REPEAT NEXT WEEK = OFF")
-        println("REPEAT NEXT WEEK = OFF")
-//        repeatNextWeek(context, wakeCal, id)
+        if (!isSnooze) {
+            println("----------  SCHEDULING FOR NEXT WEEK")
+            repeatNextWeek(context, currentAlarmCal, alarmId)
+//            repeatNextWeek(context, currentAlarmCal, stationRefId, alarmId)
+        }
     }
+
     private fun wakeUpScreen(context: Context) {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         val wakeLock = powerManager.newWakeLock(
@@ -64,53 +87,51 @@ class WakeUpReceiver : BroadcastReceiver() {
         wakeLock.acquire(5000) // Keep the screen on for 5 seconds
     }
 
-    private fun repeatNextWeek(context: Context, currentAlarmCal: Calendar, id: String) {
+//    private fun repeatNextWeek(context: Context, currentAlarmCal: Calendar, stationRefId: String, alarmId: String) {
+    private fun repeatNextWeek(context: Context, currentAlarmCal: Calendar, alarmId: String) {
+
+        val repeatAlarm: AlarmSettings? = AlarmSettings.getAlarmById(alarmId)
+
         val nextWake = Calendar.getInstance()
         nextWake.timeInMillis = currentAlarmCal.timeInMillis
 
         val day: String = AlarmSettings.getDayName(nextWake.get(Calendar.DAY_OF_WEEK))
-        val alarmSettings: AlarmSettings = AlarmSettings()
-        alarmSettings.id = id
-        alarmSettings.hour = nextWake.get(Calendar.HOUR_OF_DAY)
-        alarmSettings.minute = nextWake.get(Calendar.MINUTE)
-        alarmSettings.daysOfWeek[day]= true
+        val repeatAlarmSettings: AlarmSettings = AlarmSettings()
+        repeatAlarmSettings.id = alarmId
+        repeatAlarmSettings.hour = nextWake.get(Calendar.HOUR_OF_DAY)
+        repeatAlarmSettings.minute = nextWake.get(Calendar.MINUTE)
+        repeatAlarmSettings.daysOfWeek[day]= true
+        // repeatAlarmSettings.station = Station()
+        // repeatAlarmSettings.station?.url = streamUrl
+        // repeatAlarmSettings.stationRef = stationRefId
 
-        println("(repeatWake) nextWake.get(Calendar.DAY_OF_WEEK):" + nextWake.get(Calendar.DAY_OF_WEEK))
-        println("(repeatWake) nextWake.get(Calendar.WEEK_OF_YEAR):" + nextWake.get(Calendar.WEEK_OF_YEAR))
-        println("(repeatWake) nextWake.get(Calendar.HOUR_OF_DAY):" + nextWake.get(Calendar.HOUR_OF_DAY))
-        println("(repeatWake) nextWake.get(Calendar.MINUTE):" + nextWake.get(Calendar.MINUTE))
-        println("(repeatWake) nextWake.get(Calendar.SECOND):" + nextWake.get(Calendar.SECOND))
-        println("(repeatWake) DAY:" + day)
-        println("(repeatWake) Calendar.DAY_OF_WEEK:" + Calendar.DAY_OF_WEEK)
-        println("(repeatWake) nextWake.time:" + nextWake.time)
-        println(alarmSettings)
+        // println("(repeatWake) nextWake.get(Calendar.DAY_OF_WEEK):" + nextWake.get(Calendar.DAY_OF_WEEK))
+        // println("(repeatWake) nextWake.get(Calendar.HOUR_OF_DAY):" + nextWake.get(Calendar.HOUR_OF_DAY))
+        // println("(repeatWake) nextWake.get(Calendar.MINUTE):" + nextWake.get(Calendar.MINUTE))
+        // println("(repeatWake) nextWake.DAY:" + day)
+        // println("(repeatWake) nextWake.time:" + nextWake.time)
+        // println("(repeatWake) nextWake.time:" + nextWake.time)
+        // println("(repeatWake) nextWake.time:" + nextWake.time)
 
         val scheduler = Scheduler(context)
-        scheduler.setWakeUp2(alarmSettings, day) // week will be incremented in setWakeUp2
 
+        // OLD
+//        scheduler.setWakeUp2(repeatAlarmSettings, day) // week will be incremented in setWakeUp2
 
-    }
-
-
-    private fun showNotification(context: Context, title: String, wakeCal: Calendar) {
-        val notificationIdTest = 2
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "alarm_channel"
-
-        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        val channel = NotificationChannel(channelId, "Alarm Notifications", NotificationManager.IMPORTANCE_HIGH).apply {
-            setSound(soundUri, null) // Set sound for the channel
+        // NEW
+        if (repeatAlarm == null) {
+            println("ABORT!!!!!!!!")
+            println("ABORT!!!!!!!!")
+            println("ABORT!!!!!!!!")
+            println("ABORT!!!!!!!!")
+            println("ABORT!!!!!!!!")
+            return
         }
-        notificationManager.createNotificationChannel(channel)
-
-
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setContentTitle(title)  // Title of the notification
-            .setContentText(wakeCal.time.toString()) // Message body
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Notification icon
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // High-priority to show immediately
-            .build()
-
-        notificationManager.notify(notificationIdTest, notification)
+        println("REPEATING @ ")
+        println("REPEATING @ ")
+        println("REPEATING @ ")
+        println(repeatAlarm)
+        scheduler.setWakeUp2(repeatAlarm, day) // week will be incremented in setWakeUp2
     }
+
 }

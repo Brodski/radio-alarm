@@ -1,5 +1,6 @@
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.bskiradioalarm.models.Station
 
 object PreferencesManagerSingleton {
     private const val ALARM_STORAGE_NAME = "alarms_setting"
@@ -12,4 +13,23 @@ object PreferencesManagerSingleton {
         stationsSharedPrefs = context.getSharedPreferences(STATION_STORAGE_NAME, Context.MODE_PRIVATE)
     }
 
+    fun printAllAlarms() {
+        println("ALARM PREFERENCE")
+        println("ALARM PREFERENCE")
+        println("ALARM PREFERENCE")
+        for ((key, value) in this.alarmsSharedPrefs.all) {
+            println("ALARM Key: $key, Value: $value")
+        }
+    }
+
+    fun printAllStations() {
+        println("STATION PREFERENCE")
+        println("STATION PREFERENCE")
+        println("STATION PREFERENCE")
+        val allStationz:  LinkedHashMap<String, Station> = Station.getAllStations()
+
+        for ((key, value) in allStationz) {
+            println("STATION Key: $key, Value: $value")
+        }
+    }
 }

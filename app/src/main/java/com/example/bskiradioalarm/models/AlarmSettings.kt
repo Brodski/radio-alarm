@@ -1,6 +1,7 @@
 package com.example.bskiradioalarm.models
 
 //import java.time.LocalTime
+import PreferencesManagerSingleton
 import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
@@ -35,13 +36,16 @@ data class AlarmSettings(
         "Sunday" to false
     ),
 
-    var station: Station? = null
+    var station: Station? = null,
+
+    var stationRef: String = ""
 
 ) {
 
     companion object {
-        fun getAllSorted(alarmsSharedPrefs: SharedPreferences): LinkedHashMap<String, AlarmSettings> {
-            val allEntries: Map<String, *> = alarmsSharedPrefs.all
+
+        fun getAllSorted(): LinkedHashMap<String, AlarmSettings> {
+            val allEntries: Map<String, *> = PreferencesManagerSingleton.alarmsSharedPrefs.all
 
             val sortedMapEntries: LinkedHashMap<String, AlarmSettings> = allEntries.entries
                 .sortedBy { it.key.toLongOrNull() ?: Long.MAX_VALUE }
@@ -49,19 +53,21 @@ data class AlarmSettings(
 //                .filterValues { true } as LinkedHashMap<String, AlarmSettings>
             return sortedMapEntries
         }
+
         fun getDayAsInt(day: String): Int {
             val intDay = when (day.lowercase()) {
-                "sunday" -> Calendar.SUNDAY       // 1
-                "monday" -> Calendar.MONDAY       // 2
-                "tuesday" -> Calendar.TUESDAY     // 3
-                "wednesday" -> Calendar.WEDNESDAY // 4
-                "thursday" -> Calendar.THURSDAY   // 5
-                "friday" -> Calendar.FRIDAY       // 6
-                "saturday" -> Calendar.SATURDAY   // 7
+                "sunday"     -> Calendar.SUNDAY    // 1
+                "monday"     -> Calendar.MONDAY    // 2
+                "tuesday"    -> Calendar.TUESDAY   // 3
+                "wednesday"  -> Calendar.WEDNESDAY // 4
+                "thursday"   -> Calendar.THURSDAY  // 5
+                "friday"     -> Calendar.FRIDAY    // 6
+                "saturday"   -> Calendar.SATURDAY  // 7
                 else -> throw IllegalArgumentException("Invalid day name: $day")
             }
             return intDay
         }
+
         fun getDayName(dayInt: Int): String {
             return when (dayInt) {
                 Calendar.SUNDAY -> "Sunday"
@@ -79,9 +85,7 @@ data class AlarmSettings(
             val json = Json { ignoreUnknownKeys = true }
             return json.decodeFromString(jsonString)
         }
-//        fun updateDeletedStation(station: Station) {
-//            this.getAllSorted()
-//        }
+
         fun getDefaultStation(listStations: List<Station>): Station? {
             if (listStations.isNullOrEmpty()) {
                 println("listStations null wtf")
@@ -95,6 +99,23 @@ data class AlarmSettings(
             return listStations[0]
         }
 
+        fun getAlarmById(alarmId: String): AlarmSettings? {
+            try {
+//                println("--- Getting Station: "+ alarmId)
+                val jsonStr: String = PreferencesManagerSingleton.alarmsSharedPrefs.getString(alarmId, "-1").toString()
+                if (jsonStr == "-1") {
+                    return null
+                }
+                val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
+                return alarmSettings
+            }
+            catch (e: Exception) {
+                println("Caught an exception: ${e.message}")
+                e.printStackTrace()
+            }
+            return null
+        }
+
     }
 
 
@@ -102,23 +123,27 @@ data class AlarmSettings(
         val time = String.format("%02d:%02d", this.hour, this.minute)
         return time
     }
+
     public fun getRequestCode(day: String): Int {
         val idX: String = day.toLowerCase() + this.id
         val hashed: Int = idX.hashCode()
+//        println("GET REQUEST CODE: $idX")
         return hashed
     }
+
     public fun prettyDays(): String {
         var prettyList: MutableList<String> = mutableListOf<String>()
         for ((key, isOn) in this.daysOfWeek) {
             if (!isOn) {
                 continue
             }
-            if (key.lowercase() in listOf("thursday", "tuesday", "saturday", "sunday")) {
-                prettyList.add(key.take(2))
-            }
-            else {
-                prettyList.add(key.take(1))
-            }
+            prettyList.add(key.take(3))
+//            if (key.lowercase() in listOf("thursday", "tuesday", "saturday", "sunday")) {
+//                prettyList.add(key.take(2))
+//            }
+//            else {
+//                prettyList.add(key.take(1))
+//            }
         }
         val title: String = if (prettyList.isNullOrEmpty()) {"Disabled"} else {prettyList.joinToString(", ")}
         return title
@@ -129,13 +154,14 @@ data class AlarmSettings(
         return json.encodeToString(this)
     }
 
-    public fun save(sharedPreferences: SharedPreferences){
+    public fun save(){
         // Save in storage
+        val sharedPreferences: SharedPreferences = PreferencesManagerSingleton.alarmsSharedPrefs
         val jsonStr: String =  this.toJsonStringSerialize()
         sharedPreferences.edit().putString(this.id, jsonStr).apply()
     }
 
-    public fun delete(sharedPreferences: SharedPreferences, scheduler: Scheduler) {
+    public fun delete(scheduler: Scheduler) {
         for (entry: Map.Entry<String, Boolean> in this.daysOfWeek) {
             val dayKey: String = entry.key
             val isOn: Boolean = entry.value
@@ -143,11 +169,11 @@ data class AlarmSettings(
             scheduler.cancelAlarm(this, dayKey)
         }
         val deleteId: String = this.id
-        sharedPreferences.edit().remove(deleteId).apply()
+        PreferencesManagerSingleton.alarmsSharedPrefs.edit().remove(deleteId).apply()
     }
 
 
-    fun updateTime(scheduler: Scheduler) {
+    public fun updateTime(scheduler: Scheduler) {
         for (entry: Map.Entry<String, Boolean> in this.daysOfWeek) {
             val dayKey: String = entry.key
             val isOn: Boolean = entry.value
@@ -157,74 +183,55 @@ data class AlarmSettings(
         }
     }
 
-    fun doQoLAlarmCheck(context: Context, view: View) {
-        val dayHourMin: Triple<Int,Int,Int> = this.findNextAlarmEvent()
-        var nextAlarmMsg = ""
-        if (dayHourMin.first == 0) {
-            nextAlarmMsg = "Next in ${dayHourMin.second} hours, ${dayHourMin.third} min"
-        }
-        else {
-            nextAlarmMsg = "Next in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min"
-        }
-
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-
-        if (currentVolume == 1) {
-            nextAlarmMsg = " \uD83D\uDD07Alarm is SILENT!" + "\nSettings → Sound → Alarm Volume\n" + nextAlarmMsg // 🔊
-            val snackbar: Snackbar = Snackbar.make(view, nextAlarmMsg, Snackbar.LENGTH_INDEFINITE)
-            val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-            snackbar.setAction("Dismiss") { snackbar.dismiss() }
-            textView.maxLines = 5
-            snackbar.show()
-        }
-        else {
-            Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_LONG).show()
-        }
-        println( "Alarm Volume: $currentVolume / $maxVolume")
-        println("\uD83D\uDD0A Settings → Sound → Alarm Volume")
+    public fun getStation(stationRef: String = this.stationRef): Station? {
+        return Station.getStationById(this.stationRef)
+//        try {
+//            println("--- Getting Station: "+ this.stationRef)
+//            val jsonStr: String = PreferencesManagerSingleton.stationsSharedPrefs.getString(stationRef, "-1").toString()
+//            val station: Station = Station.toStationDeserialize(jsonStr)
+//            return station
+//        }
+//        catch (e: Exception) {
+//            println("Caught an exception: ${e.message}")
+//            e.printStackTrace()
+//        }
+//        return null
     }
 
-    fun findNextAlarmEvent(): Triple<Int, Int, Int> {
-        // Create a Calendar instance for next Tuesday at 12:10 PM
+    public fun findNextAlarmEvent(): Triple<Int, Int, Int> {
+
         var nowCal = Calendar.getInstance()
-        var nextAlert = Calendar.getInstance() // Will set time to 12:10 PM
+        var nextAlert = Calendar.getInstance()
 
         nextAlert[Calendar.HOUR_OF_DAY] = this.hour
         nextAlert[Calendar.MINUTE] = this.minute
 
-        println("+=========== START ============+")
+//        println("+=========== START ============+")
         for (i in 1..7) {
             val nextDayNum = nextAlert[Calendar.DAY_OF_WEEK] // 7 = Saturday
             val nextDayName = AlarmSettings.getDayName(nextDayNum) // Saturday
             val nextIsOn = this.daysOfWeek[nextDayName]
-            println("nextDayNum: " + nextDayName + " nextDayName: " + nextDayName + " nextIsOn: " +  nextIsOn)
+            println("(findNextAlarmEvent) nextDayNum: " + nextDayNum)
+            println("(findNextAlarmEvent) nextDayName: " + nextDayName)
+            println("(findNextAlarmEvent) nextIsOn: " +  nextIsOn)
 
             if (i == 1 && nextIsOn == true && nextAlert.before(nowCal)) { // we set hours and minutes few lines ago
-                println("continue...")
+                println("(findNextAlarmEvent) continue...")
                 nextAlert.add(Calendar.DAY_OF_MONTH, 1);
                 continue
             }
             if (nextIsOn == true){
-                println("---> nextIsOn = TRUE")
-                println("---> nextIsOn = TRUE")
-                println("---> nextIsOn = TRUE")
+//                println("---> nextIsOn = TRUE")
+//                println("---> nextIsOn = TRUE")
+//                println("---> nextIsOn = TRUE")
                 break
             }
 
             nextAlert.add(Calendar.DAY_OF_MONTH, 1);
         }
 
-        println("+=========== END =============+")
 
-
-//        while (nextAlert[Calendar.DAY_OF_WEEK] != Calendar.TUESDAY) {
-//            System.out.println("nextAlert.DAY_OF_WEEK: " + nextAlert[Calendar.DAY_OF_WEEK]);
-//            nextAlert.add(Calendar.DAY_OF_MONTH, 1);
-//        }
-
-        // Calculate the difference in milliseconds
+        // difference in milliseconds
         val diffMillis = nextAlert.timeInMillis - nowCal.timeInMillis
 
         // Convert to hours and minutes
@@ -234,17 +241,8 @@ data class AlarmSettings(
         val days = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
         val hours = (diffMillis / (1000 * 60 * 60)).toInt() % 24
         val minutes = (diffMillis / (1000 * 60)).toInt() % 60
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
-        println("days: $days. hours $hours. min $minutes")
+        println("next alarm: days: $days. hours $hours. min $minutes")
+        println("+=========== END =============+")
         return Triple(days, hours, minutes)
     }
 

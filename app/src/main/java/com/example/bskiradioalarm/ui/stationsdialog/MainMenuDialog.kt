@@ -8,24 +8,13 @@ import android.widget.LinearLayout
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import com.example.bskiradioalarm.models.AlarmSettings
-import com.example.bskiradioalarm.viewmodels.StationsViewModel
 
-class MenuMainDialog(alarmSettings: AlarmSettings) : DialogFragment() {
+class MainMenuDialog(alarmSettings: AlarmSettings) : DialogFragment() {
 
     private val alarmSettings: AlarmSettings = alarmSettings
     private val sharedStationsViewModel: StationsViewModel by activityViewModels()
 
-//    companion object {
-//        private const val ARG_ALARM_SETTINGS = "alarmSettings"
-//
-//        fun newInstance(alarmSettings: String): MenuMainDialog {
-//            val fragment = MenuMainDialog()
-//            val args = Bundle()
-//            args.putString(ARG_ALARM_SETTINGS, alarmSettings)
-//            fragment.arguments = args
-//            return fragment
-//        }
-//    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,10 +22,6 @@ class MenuMainDialog(alarmSettings: AlarmSettings) : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-//        val jsonStr: String = arguments?.getString(ARG_ALARM_SETTINGS) ?: "No Data"
-//        val alarmSettings: AlarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
-//        println("!!! MainMenuDialog: $alarmSettings")
-
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Station Options")
 
@@ -48,7 +33,7 @@ class MenuMainDialog(alarmSettings: AlarmSettings) : DialogFragment() {
         val firstButton = Button(requireContext()).apply {
             text = "Choose station"
             setOnClickListener {
-                MenuSelectStation(alarmSettings).show(parentFragmentManager, "FormDialog1")
+                StationsUiSelect(alarmSettings).show(parentFragmentManager, "FormDialog1")
             }
         }
 

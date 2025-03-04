@@ -17,16 +17,12 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
-import android.media.AudioManager
 import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.Toast
-import androidx.fragment.app.activityViewModels
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
-import com.example.bskiradioalarm.ui.stationsdialog.MenuMainDialog
-import com.example.bskiradioalarm.viewmodels.StationsViewModel
+import com.example.bskiradioalarm.ui.stationsdialog.MainMenuDialog
 import com.example.bskiradioalarm.utils.Scheduler
 import kotlin.collections.LinkedHashMap
 
@@ -43,6 +39,8 @@ class AlarmsFragment : Fragment() {
 
     private lateinit var scheduler: Scheduler
 
+    private val alarmsLogic = AlarmsLogic()
+
 //    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
 //
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -55,71 +53,65 @@ class AlarmsFragment : Fragment() {
 
 
         binding.addAlarmButton.setOnClickListener {
-            addNewAlarm()
+            onAddNewAlarm()
         }
 
-        println("(Alarm-onCreateView) loading alarms from storage ...")
-        loadAlarmsFromStorage()
+//        loadAlarmsFromStorage()
+        populateUiWithAlarmsInStorage()
+
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // sharedStationsViewModel.loadStations()
     }
 
     ///////////////////////////////////////////////
-    // TAP NEW ALARM "+" BUTTON 1/2
+    // TAP NEW ALARM "+" BUTTON
     ///////////////////////////////////////////////
-    private fun addNewAlarm() {
+    private fun onAddNewAlarm() {
         println("addNewAlarm() ")
-        val newAlarmSettings: AlarmSettings = AlarmSettings()
-        newAlarmSettings.save(alarmsSharedPrefs)
-        addAlarmUi(newAlarmSettings)
 
+        val newAlarmSettings: AlarmSettings = AlarmSettings()
+
+        alarmsLogic.addNewAlarm(newAlarmSettings)
+
+        addAlarmUi(newAlarmSettings)
     }
 
     ///////////////////////////////////////////////
-    // TAP TIME "9:00" BUTTON EVENT
+    // CLOCK POPUP
+    // TAP TIME "9:00"
     ///////////////////////////////////////////////
     private fun openClockDialog(alarmSettings: AlarmSettings, isNew: Boolean = false) {
-        // Init Clock-dialog & display
         val calendar = Calendar.getInstance()
         val hourUi: Int = alarmSettings.hour
         val minuteUi: Int = alarmSettings.minute
 
         var timeSelected = false // pro trick
 
+        // CLOCK POPUP //
         val timePickerDialog = TimePickerDialog(
             requireContext(),
             android.R.style.Theme_DeviceDefault_Dialog,
-            { view, selectedHour, selectedMinute  ->
+            { view, selectedHour, selectedMinute  -> // EVENT FOR WHEN TimeSet by user
                 timeSelected = true
                 alarmSettings.hour = selectedHour
                 alarmSettings.minute = selectedMinute
             },
             hourUi, minuteUi, false
         )
+
+        // EVENT LISTENERS //
         timePickerDialog.setOnDismissListener {
             // User clicked though
             if (timeSelected) {
-                println("Dialog dismissed AFTER selection")
-                alarmSettings.save(alarmsSharedPrefs)
-                alarmSettings.updateTime(scheduler)
-                updateAlarmUi(alarmSettings)
+                // logic
+                alarmsLogic.completeTimeSelect(alarmSettings, scheduler)
 
-//                val audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as AudioManager
-//                val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-//                val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-
-//                alarmSettings.doQoLAlarmCheck(requireContext())
-                 alarmSettings.doQoLAlarmCheck(requireContext(), requireView())
-//                val dayHourMin: Triple<Int,Int,Int> = alarmSettings.findNextAlarmEvent()
-//                Toast.makeText(requireContext(), "Next in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min", Toast.LENGTH_LONG).show()
-//
-//                println( "Alarm Volume: $currentVolume / $maxVolume")
-//                println(" \uD83D\uDD0A Settings → Sound → Alarm Volume")
+                // ui
+                alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView())
+                this.updateAlarmUi(alarmSettings)
             }
             // User canceled
             else {
@@ -134,18 +126,14 @@ class AlarmsFragment : Fragment() {
         val hourMinLabel = container?.findViewWithTag<TextView>("alarm_time_text")
         if (hourMinLabel != null) {
             hourMinLabel.text = alarmSettings.prettyPrintTime()
-        } else {
-            println("WTF NO LABELLLLL")
         }
         println("new clock time: " + hourMinLabel?.text)
     }
 
-    private fun loadAlarmsFromStorage() {
-        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted(alarmsSharedPrefs)
+    private fun populateUiWithAlarmsInStorage() {
+        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted()
         for ((keyId, alarmSettings) in allAlarmsMap) {
-//            val jsonStr: String = alarmsSharedPrefs.getString(keyId, "").toString()
-//            val alarmSettings = AlarmSettings.toAlarmDeserialize(jsonStr)
-            println("(load) loading alarm to ui: ${alarmSettings.id}")
+            println("(populating ui with alarms): ${alarmSettings.id}")
             addAlarmUi(alarmSettings)
         }
     }
@@ -162,7 +150,6 @@ class AlarmsFragment : Fragment() {
         // EMPTY  CONTAINER
         val container = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-//            setPadding(10, 10, 10, 10)
             setPadding(0, 10, 10, 0)
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.parseColor("#F0F0F0")) // Light gray background
@@ -176,7 +163,7 @@ class AlarmsFragment : Fragment() {
             setBackgroundColor(Color.TRANSPARENT)
             setPadding(0, 0, 0, 0)
             setColorFilter(Color.BLACK)
-            setOnClickListener { MenuMainDialog(alarmSettings).show(parentFragmentManager, "MenuMainTag")}
+            setOnClickListener { MainMenuDialog(alarmSettings).show(parentFragmentManager, "MenuMainTag")}
 //            setOnClickListener { MenuMainDialog.newInstance(alarmSettings.toJsonStringSerialize()).show(parentFragmentManager, "MenuMainTag")}
 //            setOnClickListener { showStationDialog(alarmSettings) }
         }
@@ -244,14 +231,16 @@ class AlarmsFragment : Fragment() {
     // CHECKBOX TOGGLE
     //////////////////////////////////////
     private fun onCheckBoxToggled(i: Int, isChecked: Boolean, alarmSettings: AlarmSettings) {
-        val dayMap: MutableMap.MutableEntry<String, Boolean> = alarmSettings.daysOfWeek.entries.elementAt(i)
-        alarmSettings.daysOfWeek[dayMap.key] = isChecked
-        alarmSettings.save(alarmsSharedPrefs)
-        val day = dayMap.key
-        val isOn = alarmSettings.daysOfWeek[dayMap.key]
-        scheduler.setWakeUp2(alarmSettings, day)
+        val dayIsOnMap = alarmSettings.daysOfWeek.entries.elementAt(i)
 
-        alarmSettings.doQoLAlarmCheck(requireContext(), requireView())
+        alarmsLogic.toggleDayOnOff(alarmSettings, scheduler, dayIsOnMap.key, isChecked)
+
+//        val day = dayIsOnMap.key
+//        alarmSettings.daysOfWeek[day] = isChecked
+//        alarmSettings.save()
+//        scheduler.setWakeUp2(alarmSettings, day)
+
+        alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView())
     }
 
     //////////////////////////////////////
@@ -264,9 +253,13 @@ class AlarmsFragment : Fragment() {
             .setTitle("Delete Alarm @ $time")
             .setMessage("Are you sure you want to delete this alarm?")
             .setPositiveButton("Delete") { _, _ ->
+
+                // ui
                 (container.parent as? ViewGroup)?.removeView(container)
                 uiAlarmsMap.remove(alarmSettings.id)
-                alarmSettings.delete(alarmsSharedPrefs, scheduler)
+
+                // data
+                alarmsLogic.deleteAlarm(alarmSettings, scheduler)
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -275,74 +268,6 @@ class AlarmsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-
-        android.R.drawable.ic_delete
-        android.R.drawable.stat_notify_error
-
-        android.R.drawable.ic_media_play
-        android.R.drawable.ic_media_pause
-        android.R.drawable.ic_menu_add
-        android.R.drawable.ic_input_add
-        android.R.drawable.ic_lock_idle_alarm
-        android.R.drawable.alert_dark_frame
-        android.R.drawable.alert_light_frame
-        android.R.drawable.arrow_down_float
-        android.R.drawable.bottom_bar
-        android.R.drawable.btn_default
-        android.R.drawable.btn_dialog
-        android.R.drawable.btn_minus
-        android.R.drawable.btn_radio
-        android.R.drawable.btn_plus
-        android.R.drawable.alert_light_frame
-        android.R.drawable.ic_lock_idle_alarm
-        android.R.drawable.btn_star
-        android.R.drawable.btn_star_big_off
-        android.R.drawable.btn_star_big_on
-        android.R.drawable.dialog_frame
-        android.R.drawable.dialog_holo_dark_frame
-        android.R.drawable.edit_text
-        android.R.drawable.editbox_background
-        android.R.drawable.editbox_dropdown_dark_frame
-        android.R.drawable.editbox_dropdown_light_frame
-
-        android.R.drawable.ic_dialog_alert
-
-        android.R.drawable.ic_btn_speak_now
-
-        android.R.drawable.ic_dialog_dialer
-
-        android.R.drawable.ic_dialog_email
-
-        android.R.drawable.ic_dialog_info
-
-        android.R.drawable.ic_dialog_map
-
-        android.R.drawable.ic_input_get
-
-        android.R.drawable.ic_media_rew
-        android.R.drawable.ic_menu_day
-        android.R.drawable.ic_menu_directions
-        android.R.drawable.ic_menu_edit
-        android.R.drawable.ic_menu_manage
-        android.R.drawable.ic_btn_speak_now
-
-        R.drawable.ic_notifications_black_24dp
-        R.drawable.ic_home_black_24dp
-        R.drawable.ic_dashboard_black_24dp
-        androidx.appcompat.R.drawable.abc_ab_share_pack_mtrl_alpha
-        androidx.appcompat.R.drawable.test_level_drawable
-
-        androidx.appcompat.R.drawable.abc_scrubber_control_to_pressed_mtrl_000
-
-        androidx.appcompat.R.drawable.tooltip_frame_light
-
-        androidx.appcompat.R.drawable.btn_radio_off_to_on_mtrl_animation
-
-        android.R.drawable.ic_menu_edit
-
-        android.R.drawable.btn_dialog
-
-
     }
 
 }

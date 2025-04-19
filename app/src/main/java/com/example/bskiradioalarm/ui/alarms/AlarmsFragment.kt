@@ -20,8 +20,10 @@ import android.graphics.Color
 import android.view.Gravity
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.lifecycle.ViewModelProvider
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
+import com.example.bskiradioalarm.ui.options.OptionsViewModel
 import com.example.bskiradioalarm.ui.stationsdialog.MainMenuDialog
 import com.example.bskiradioalarm.utils.Scheduler
 import kotlin.collections.LinkedHashMap
@@ -41,11 +43,16 @@ class AlarmsFragment : Fragment() {
 
     private val alarmsLogic = AlarmsLogic()
 
-//    private val sharedStationsViewModel: StationsViewModel by activityViewModels()
-//
+    private val noAlarmsMessageUi = "No alarms scheduled"
+
+    private lateinit var alarmsViewModel: AlarmsViewModel
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+//        val alarmsViewModel = ViewModelProvider(this)[AlarmsViewModel::class.java]
+        alarmsViewModel = ViewModelProvider(this)[AlarmsViewModel::class.java]
+
         alarmsSharedPrefs = PreferencesManagerSingleton.alarmsSharedPrefs
-        stationsSharedPrefs = requireContext().getSharedPreferences("station_setting", Context.MODE_PRIVATE)
+        stationsSharedPrefs = PreferencesManagerSingleton.stationsSharedPrefs
         scheduler = Scheduler(requireContext())
 
         _binding = FragmentAlarmsBinding.inflate(inflater, container, false)
@@ -56,14 +63,33 @@ class AlarmsFragment : Fragment() {
             onAddNewAlarm()
         }
 
-//        loadAlarmsFromStorage()
         populateUiWithAlarmsInStorage()
+
+        // Cool "Next Alarm" UI feature
+        val messageNextAlarmTextView: TextView = binding.msgNextAlarm
+        alarmsViewModel.timeDiff.observe(viewLifecycleOwner) {
+            messageNextAlarmTextView.text = it
+        }
+
+        val nextAlarm: Calendar? = alarmsLogic.findNextAlarmFromAll()
+        alarmsViewModel.startTimer(nextAlarm)
 
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+    }
+
+    ///////////////////////////////////////////////
+    // Init Populating Stuff
+    ///////////////////////////////////////////////
+    private fun populateUiWithAlarmsInStorage() {
+        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted()
+        for ((keyId, alarmSettings) in allAlarmsMap) {
+            println("(populating ui with alarms): ${alarmSettings.id}")
+            addAlarmUi(alarmSettings)
+        }
     }
 
     ///////////////////////////////////////////////
@@ -110,7 +136,9 @@ class AlarmsFragment : Fragment() {
                 alarmsLogic.completeTimeSelect(alarmSettings, scheduler)
 
                 // ui
-                alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView())
+//                alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView())
+                this.someUpdateUiShit()
+
                 this.updateAlarmUi(alarmSettings)
             }
             // User canceled
@@ -119,6 +147,12 @@ class AlarmsFragment : Fragment() {
             }
         }
         timePickerDialog.show()
+    }
+
+    private fun someUpdateUiShit() {
+        val nextAlarm: Calendar? = alarmsLogic.findNextAlarmFromAll()
+        alarmsViewModel.startTimer(nextAlarm)
+
     }
 
     private fun updateAlarmUi(alarmSettings: AlarmSettings) {
@@ -130,22 +164,14 @@ class AlarmsFragment : Fragment() {
         println("new clock time: " + hourMinLabel?.text)
     }
 
-    private fun populateUiWithAlarmsInStorage() {
-        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted()
-        for ((keyId, alarmSettings) in allAlarmsMap) {
-            println("(populating ui with alarms): ${alarmSettings.id}")
-            addAlarmUi(alarmSettings)
-        }
-    }
-
-///////////////////////////////////////////////////////////////////////////////////
-// ADD NEW ALARM 2/2
-///////////////////////////////////////////////////////////////////////////////////
-//        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
-//   🔊   | 12:30  |   |Mon |  |Tue |  |Wed |  |Thu |  |Fri |  |Sat |  |Sun |  ❌
-//        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
-//                      [ x ]   [   ]    [ x ]   [   ]  [ x ]    [   ]   [ x ]
-///////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////
+    // ADD NEW ALARM 2/2
+    ///////////////////////////////////////////////////////////////////////////////////
+    //        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
+    //   🔊   | 12:30  |   |Mon |  |Tue |  |Wed |  |Thu |  |Fri |  |Sat |  |Sun |  ❌
+    //        +--------+   +----+  +----+  +----+  +----+  +----+  +----+  +----+
+    //                      [ x ]   [   ]    [ x ]   [   ]  [ x ]    [   ]   [ x ]
+    ///////////////////////////////////////////////////////////////////////////////////
     private fun addAlarmUi(alarmSettings: AlarmSettings) {
         // EMPTY  CONTAINER
         val container = LinearLayout(requireContext()).apply {
@@ -164,8 +190,6 @@ class AlarmsFragment : Fragment() {
             setPadding(0, 0, 0, 0)
             setColorFilter(Color.BLACK)
             setOnClickListener { MainMenuDialog(alarmSettings).show(parentFragmentManager, "MenuMainTag")}
-//            setOnClickListener { MenuMainDialog.newInstance(alarmSettings.toJsonStringSerialize()).show(parentFragmentManager, "MenuMainTag")}
-//            setOnClickListener { showStationDialog(alarmSettings) }
         }
 
         // TIME 12:30
@@ -235,12 +259,12 @@ class AlarmsFragment : Fragment() {
 
         alarmsLogic.toggleDayOnOff(alarmSettings, scheduler, dayIsOnMap.key, isChecked)
 
-//        val day = dayIsOnMap.key
-//        alarmSettings.daysOfWeek[day] = isChecked
-//        alarmSettings.save()
-//        scheduler.setWakeUp2(alarmSettings, day)
+        alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView(), dayIsOnMap.key)
 
-        alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView())
+        this.someUpdateUiShit()
+//        alarmsLogic.toastForSingle(alarmSettings, dayIsOnMap.key)
+
+//        val nextAlarm: Calendar? = alarmsLogic.findNextAlarmFromAll()
     }
 
     //////////////////////////////////////
@@ -254,12 +278,15 @@ class AlarmsFragment : Fragment() {
             .setMessage("Are you sure you want to delete this alarm?")
             .setPositiveButton("Delete") { _, _ ->
 
+                // data
+                alarmsLogic.deleteAlarm(alarmSettings, scheduler)
+
+
                 // ui
                 (container.parent as? ViewGroup)?.removeView(container)
                 uiAlarmsMap.remove(alarmSettings.id)
 
-                // data
-                alarmsLogic.deleteAlarm(alarmSettings, scheduler)
+                this.someUpdateUiShit()
             }
             .setNegativeButton("Cancel", null)
             .show()

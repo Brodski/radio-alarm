@@ -1,5 +1,6 @@
 package com.example.bskiradioalarm.ui.alarms
 
+import PreferencesManagerSingleton
 import android.content.Context
 import android.media.AudioManager
 import android.view.View
@@ -9,12 +10,14 @@ import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.utils.Scheduler
 import com.google.android.material.snackbar.Snackbar
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class AlarmsLogic {
 
     fun addNewAlarm(newAlarmSettings: AlarmSettings) {
         // Empty alarm with nothing
-        println("addNewAlarm() ")
         newAlarmSettings.save()
     }
 
@@ -29,26 +32,150 @@ class AlarmsLogic {
 
         alarmSettings.updateTime(scheduler)
     }
+    fun toastForSingle(alarmSettings: AlarmSettings, dayName: String) {
+
+        val alertCal = toastForSingleAux(alarmSettings, dayName)
+
+        val dayHourMin: Triple<Int,Int,Int> = this.convertToTripletIntDiff(alertCal)
+
+
+    }
+
+    fun toastForSingleAux(alarmSettings: AlarmSettings, dayName: String): Calendar? {
+        println("vvvvvvvvvv")
+        println("    " + alarmSettings.daysOfWeek)
+        println("   dayName: " + dayName)
+        val dayTapped = alarmSettings.daysOfWeek[dayName]
+        println("   dayTapped " + dayTapped)
+        if (dayTapped == false) {
+            return null
+        }
+        var nowCal = Calendar.getInstance()
+        var tappedAlarmCal = Calendar.getInstance()
+        tappedAlarmCal[Calendar.HOUR_OF_DAY] = alarmSettings.hour
+        tappedAlarmCal[Calendar.MINUTE] = alarmSettings.minute
+//        tappedAlarmCal[Calendar.DAY_OF_WEEK] = AlarmSettings.getDayAsInt(dayName)
+
+        // annoying math to move the calender from today to the next Tuesday or Wednesday or ect
+        val today = tappedAlarmCal.get(Calendar.DAY_OF_WEEK)
+        val targetDayOfWeek = AlarmSettings.getDayAsInt(dayName)
+        var daysToAdd = targetDayOfWeek - today
+        if (daysToAdd <= 0) {
+            daysToAdd += 7
+        }
+        tappedAlarmCal.add(Calendar.DAY_OF_MONTH, daysToAdd)
+
+        // math to move if same day
+        // idk if I need this
+        if (tappedAlarmCal.before(nowCal) && dayTapped == true) {
+            println("   ---> isSameDayAsToday and before ")
+            tappedAlarmCal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val formattedDate = formatter.format(tappedAlarmCal.time)
+        println("   " + formattedDate)
+        println("^^^^^^^")
+        return tappedAlarmCal
+
+    }
 
     fun toggleDayOnOff(alarmSettings: AlarmSettings, scheduler: Scheduler, dayName: String, isChecked: Boolean) {
-
         alarmSettings.daysOfWeek[dayName] = isChecked
         alarmSettings.save()
         scheduler.setWakeUp2(alarmSettings, dayName)
     }
+    ////////////////////////////////////////
+    //  time    M   T   W   Th  F   S   Su
+    //  9:00    X   X   X   X   X   ✔️  X
+    //  14:15   X   ✔️  X  ✔️   ✔️  X   X
+    //  8:15    X   X️   X   X️    ️X   X   X
+    //
+    // If today is Wednesday, it will return:
+    // Triple <Saturday, 9, 0>
+    // Triple<Thursday, 14, 15>
+    // Triple<-1, -1, -1>
+    fun findNextAlarmFromAll(): Calendar? {
+        val nextAlarmList = mutableListOf<Calendar?>()
+        val allAlarmsMap: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted()
 
-    fun doQoLAlarmToast(alarmSettings: AlarmSettings, context: Context, view: View) {
-        val dayHourMin: Triple<Int,Int,Int> = alarmSettings.findNextAlarmEvent()
+        for (alarmSetting: AlarmSettings in allAlarmsMap.values.toList()) {
+            var nextTime = alarmSetting.findNextAlarmEvent()
+            if (nextTime != null) {
+                nextAlarmList.add(nextTime)
+            }
+        }
 
+        val sortedAlarms = nextAlarmList.sortedBy { it?.timeInMillis }
+
+
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        for (alarmCal in sortedAlarms) {
+            if (alarmCal == null) {
+                continue
+            }
+            val formattedDate = formatter.format(alarmCal.time)
+            println(formattedDate)
+        }
+        if (sortedAlarms.size == 0) {
+            return null
+        }
+        val shiiit = sortedAlarms.firstOrNull()
+        val formattedDate = formatter.format(shiiit?.time)
+        println(formattedDate)
+        return shiiit
+
+
+
+    }
+
+
+
+    fun convertToTripletIntDiff(nextAlert: Calendar?): Triple<Int, Int, Int> {
+        if (nextAlert == null){
+            return Triple(-1, -1, -1)
+        }
+        var nowCal = Calendar.getInstance()
+
+        val diffMillis = nextAlert.timeInMillis - nowCal.timeInMillis
+
+        val msInSec = 1000
+        val secInMin = 60
+        val minInHour = 60
+        val days = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+        val hours = (diffMillis / (1000 * 60 * 60)).toInt() % 24
+        val minutes = (diffMillis / (1000 * 60)).toInt() % 60
+//        println("next alarm: days: $days. hours $hours. min $minutes")
+//        println("+=========== END =============+")
+        return Triple(days, hours, minutes)
+    }
+
+
+
+
+    fun doQoLAlarmToast(alarmSettings: AlarmSettings, context: Context, view: View, dayName: String) {
+        val tappedAlarmCal: Calendar? = toastForSingleAux(alarmSettings, dayName)
+        var nextAlarm = tappedAlarmCal
+        val dayHourMin: Triple<Int,Int,Int> = this.convertToTripletIntDiff(nextAlarm)
+        //
+        // Next Alarm toast
+        //
+        // TODO, this message duplicated in the ViewModel file
         var nextAlarmMsg = ""
         if (dayHourMin.first == 0) {
             nextAlarmMsg = "Alarm in ${dayHourMin.second} hours, ${dayHourMin.third} min"
+        }
+        else if (dayHourMin.first == -1 ) {
+//            nextAlarmMsg = "Alarm disabled"
+            nextAlarmMsg = "${dayName}  disabled"
         }
         else {
             nextAlarmMsg = "Alarm in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min"
         }
 
-
+        //
+        // Audio Toast
+        //
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
         val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
@@ -69,7 +196,8 @@ class AlarmsLogic {
             snackbar.show()
         }
         else {
-            Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_LONG).show()
+//            Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_SHORT).show()
         }
         println( "Alarm Volume: $currentVolume / $maxVolume")
         println("\uD83D\uDD0A Settings → Sound → Alarm Volume")

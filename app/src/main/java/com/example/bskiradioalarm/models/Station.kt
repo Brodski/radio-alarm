@@ -21,6 +21,13 @@ data class Station(
         System.currentTimeMillis()
     )
 
+    constructor(title: String, url: String, epochId: Long) : this(
+        title,
+        url,
+        epochId.toString(),
+        epochId
+    )
+
     private fun toJsonStringSerialize(): String {
         val json = Json { encodeDefaults = true; prettyPrint = true }
         return json.encodeToString(this)
@@ -41,6 +48,13 @@ data class Station(
 //            val sortedMapEntries: LinkedHashMap<String, Station> = allEntries.entries
 //                .associateTo(LinkedHashMap()) { it.key to this.toStationDeserialize(it.value.toString()) }
 
+            var counter1 = 0
+            for (x in allEntries)
+            {
+                println("" + counter1 + ": " + x)
+                counter1 = counter1 + 1
+            }
+            println("jaskdfjkalsdjflkjalsdjfljka")
             val sortedMapEntries: LinkedHashMap<String, Station> = allEntries.entries
                 .map { it.key to this.toStationDeserialize(it.value.toString()) } // Convert to List<Pair<String, Station>>
                 .sortedBy { it.second.epochId }
@@ -50,11 +64,13 @@ data class Station(
 //            println("CHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPT ")
 //            println("CHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPT ")
 //            println("CHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPTCHAGPT ")
-////            println(sortedMapEntries)
-//            for (x in sortedMapEntries)
-//            {
-//                println(x)
-//            }
+//            println(sortedMapEntries)
+            var counter = 0
+            for (x in sortedMapEntries)
+            {
+                println("" + counter + ": " + x)
+                counter = counter + 1
+            }
             return sortedMapEntries
         }
 
@@ -64,6 +80,10 @@ data class Station(
         }
 
         fun getStationById(stationRefId: String): Station? {
+            if (stationRefId == null || stationRefId == "") {
+                println("User has not selected a station yet. Will probably eventually default to CPR, but until then, its gonna be empty")
+                return null
+            }
             try {
                 println("--- Getting Station: "+ stationRefId)
                 val jsonStr: String = PreferencesManagerSingleton.stationsSharedPrefs.getString(stationRefId, "-1").toString()

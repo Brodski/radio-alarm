@@ -73,11 +73,10 @@ class MainActivity : AppCompatActivity() {
     /////////////////////////////////////
     private fun initStations() {
         for (station in CoolConstantData.stationPreloadedList) {
-//            println("??? " + station.id + " ??? ")
             if (PreferencesManagerSingleton.stationsSharedPrefs.contains(station.id)) {
-//                println("☑ already saved")
+                println("☑ already saved: " + station.id)
             } else {
-//                println("❌ missing. will save")
+                println("❌ missing. will save")
                 station.save()
             }
         }

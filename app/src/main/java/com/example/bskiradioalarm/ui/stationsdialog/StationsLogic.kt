@@ -19,18 +19,6 @@ class StationsLogic(private val context: Context) {
     }
 
     fun deleteStation(stationDelete: Station, listStations : List<Station>?) {
-//        val allAlarmz: LinkedHashMap<String, AlarmSettings> = AlarmSettings.getAllSorted()
-//        val allStationz: LinkedHashMap<String, Station> = Station.getAllStations()
-        // TODOx currenlty this is dumb, needs to be more relational
-        // goes through all alarms, updates each
-
-//        for ((key, valAlarmSettings) in allAlarmz) {
-//            println("(allAlarmz) key: " + key)
-//            if (valAlarmSettings.station?.id == stationDelete.id) {
-//                println("(allAlarmz) WE HAVE A MATCH: " + valAlarmSettings.station?.id + " " + stationDelete.id)
-//                valAlarmSettings.station = AlarmSettings.getDefaultStation(listStations ?: emptyList())
-//            }
-//        }
 
         val editor = PreferencesManagerSingleton.stationsSharedPrefs.edit()
         println(" DELETING THIS STATION: " + stationDelete.id)

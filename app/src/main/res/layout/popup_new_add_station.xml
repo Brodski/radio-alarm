@@ -59,18 +59,25 @@
         android:layout_marginTop="8dp"
         >
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_dialog_info"
-            android:contentDescription="Info Icon"
-            android:layout_marginEnd="8dp"
-            app:tint="@color/black" />
+<!--        <ImageView-->
+<!--            android:layout_width="24dp"-->
+<!--            android:layout_height="24dp"-->
+<!--            android:src="@android:drawable/ic_dialog_info"-->
+<!--            android:contentDescription="Info Icon"-->
+<!--            android:layout_marginEnd="8dp"-->
+<!--            app:tint="@color/black" />-->
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Long-press the 'SELECT' button to delete"
-            android:textSize="16sp"/>
+            android:paddingTop="18dp"
+            android:text="Audio streams are expceted. eg. Youtube won't work."
+            android:textSize="16sp" />
+
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Long-press the 'SELECT' button to delete"-->
+<!--            android:textSize="16sp"/>-->
     </LinearLayout>
 </LinearLayout>

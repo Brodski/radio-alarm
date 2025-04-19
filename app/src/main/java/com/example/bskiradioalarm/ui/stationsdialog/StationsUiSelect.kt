@@ -42,7 +42,6 @@ class StationsUiSelect(alarmSettings: AlarmSettings) : DialogFragment() {
         val dialogView = layoutInflater.inflate(R.layout.popup_all_choose_stations, null)
 
         val listView: ListView = dialogView.findViewById(R.id.listView)
-
         val alarmsCurrentStation: Station? = alarmSettings.getStation()
 
         ////////////////////////////////////////
@@ -55,12 +54,12 @@ class StationsUiSelect(alarmSettings: AlarmSettings) : DialogFragment() {
             .setOnCancelListener { println("User dismissed the dialog by tapping outside.") }
             .create()
 
+        println("CoolConstantData.stationPreloadedList.size ====== " + CoolConstantData.stationPreloadedList.size)
         dialog.setOnShowListener {
             sharedStationsViewModel.stations.observe(this, Observer { stations: List<Station> ->
                 val adapter = StationAdapter(requireContext(),
                     stations,
                     sharedStationsViewModel,
-//                    sharedStationsViewModel.stationPreloadedList.size,
                     CoolConstantData.stationPreloadedList.size,
                     ::onStationSelected,
                     ::onPlayStation,

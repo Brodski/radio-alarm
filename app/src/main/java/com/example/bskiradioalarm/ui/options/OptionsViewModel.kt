@@ -1,10 +1,13 @@
-package com.example.bskiradioalarm.ui.notifications
+package com.example.bskiradioalarm.ui.options
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import java.util.Calendar
+import java.util.Timer
+import java.util.TimerTask
 
-class NotificationsViewModel : ViewModel() {
+class OptionsViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
         value = "This is notifications Fragment"

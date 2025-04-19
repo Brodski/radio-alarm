@@ -58,7 +58,6 @@ class Scheduler(context: Context) {
 
         val calendarEpsilon = Calendar.getInstance().apply { add(Calendar.MILLISECOND, 20) }
         if ((alarmAsCal.before(calendarEpsilon) || Calendar.getInstance().timeInMillis == alarmAsCal.timeInMillis)  && !isTest) {
-            println("WTF is this shit????!")
             alarmAsCal.add(Calendar.WEEK_OF_YEAR, 1) // Move to next week if today’s time has passed
         }
         if (isTest) {

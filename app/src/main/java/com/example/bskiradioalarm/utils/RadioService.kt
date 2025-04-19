@@ -250,7 +250,8 @@ class RadioService : Service() {
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .addAction(
                 if (isPlaying) android.R.drawable.alert_dark_frame else android.R.drawable.ic_media_play, // Apparenlty icons in notif doesnt work anymore :(
-                if (isPlaying) "∥ Pause" else "▶ Play",
+//                if (isPlaying) "∥ Pause" else "▶ Play",
+                if (isPlaying) "Pause" else "▶ Play",
                 if (isPlaying) pausePendingIntent else playPendingIntent
             )
             .addAction(
@@ -300,7 +301,7 @@ class RadioService : Service() {
             } else {
                 mediaPlayer?.reset()
             }
-            // Remove any existing timeout callbacks
+
             timeoutRunnable?.let { handler.removeCallbacks(it) }
 
             val timeoutRunnable: Runnable = Runnable {
@@ -309,11 +310,7 @@ class RadioService : Service() {
                 Toast.makeText(applicationContext, "⚠ Error playing streamXX!", Toast.LENGTH_LONG).show()
             }
 
-            // Timeout & Bad urls prep
-            // val prepareTimeout: Long = 10000L // 10s
-            // val handler: Handler = Handler(Looper.getMainLooper())
 
-//            mediaPlayer?.release()
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(url)
                 setOnErrorListener { _, what, extra ->

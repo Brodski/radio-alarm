@@ -29,25 +29,25 @@ class AlarmsViewModel : ViewModel() {
     private var timer: Timer? = null
 
     fun startTimer(start: Calendar?, isUserEventGo: Boolean = true) {
-        startTime = null
-        startTime = start
         timer?.cancel()
         timer = Timer()
-        scheduleNextTick(start, isUserEventGo)
+        scheduleNextTick(isUserEventGo)
     }
 
-    private fun scheduleNextTick(nextAlarm: Calendar?, isUserEventGo: Boolean = false) {
+    // TODO This code is copy and pasted @ doQoLAlarmToast
+    private fun scheduleNextTick(isUserEventGo: Boolean = false) {
         val alarmsLogic: AlarmsLogic = AlarmsLogic()
+        var nextAlarm: Calendar? = alarmsLogic.findNextAlarmFromAll()
         val task = object : TimerTask() {
             override fun run() {
                 val dayHourMin: Triple<Int,Int,Int> = alarmsLogic.convertToTripletIntDiff(nextAlarm)
 
                 var msg = ""
                 if (dayHourMin.first == 0) {
-                    msg = "Next alarm in ${dayHourMin.second} hours, ${dayHourMin.third} min"
+                    msg = "Alarm in ${dayHourMin.second} hours, ${dayHourMin.third} min"
                 }
                 else if (dayHourMin.first == -1 ) {
-                    msg = "No alarms scheduled my man"
+                    msg = "No alarms scheduled"
                 }
                 else {
                     msg = "Alarm in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min"
@@ -56,7 +56,7 @@ class AlarmsViewModel : ViewModel() {
                 println(msg)
                 _timeDiff.postValue(msg)
 
-                scheduleNextTick(nextAlarm)
+                scheduleNextTick()
             }
         }
         var delay = 10000L // 10 seconds

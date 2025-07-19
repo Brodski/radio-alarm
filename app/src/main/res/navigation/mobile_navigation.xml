@@ -18,8 +18,8 @@
         tools:layout="@layout/fragment_dashboard" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
+        android:id="@+id/navigation_options"
         android:name="com.example.bskiradioalarm.ui.options.OptionsFragment"
-        android:label="@string/title_notifications"
+        android:label="@string/title_options"
         tools:layout="@layout/fragment_options" />
 </navigation>

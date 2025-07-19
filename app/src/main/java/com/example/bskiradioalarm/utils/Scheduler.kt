@@ -41,11 +41,11 @@ class Scheduler(context: Context) {
 //        this.createAlarmIntent(alarmSettings, dayName)
 //    }
 
-    fun createSnoozeIntent(alarmSettings: AlarmSettings, day: String, snoozeStationRefId: String) {
-        this.createAlarmIntent(alarmSettings, day, snoozeStationRefId)
+    fun createSnoozeIntent(alarmSettings: AlarmSettings, day: String) {
+        this.createAlarmIntent(alarmSettings, day)
     }
     
-    fun createAlarmIntent(alarmSettings: AlarmSettings, day: String, snoozeStationRefId: String = ""){
+    fun createAlarmIntent(alarmSettings: AlarmSettings, day: String){
         var isTest = false
         val requestCodeAlarm = alarmSettings.getRequestCode(day)
 
@@ -80,7 +80,7 @@ class Scheduler(context: Context) {
         wakeUpintent.putExtra("requestCode", requestCodeAlarm)
         wakeUpintent.putExtra("wakeEpoch", alarmAsCal.timeInMillis.toString())
         wakeUpintent.putExtra("unique_id", System.currentTimeMillis())
-        wakeUpintent.putExtra("snoozeStationRefId", snoozeStationRefId)
+        wakeUpintent.putExtra("snoozeStationRefId", alarmSettings.stationRef)
 
         println("=====================    BEGIN  =========================")
         println("===== Creating EXTRAS - .EXTRA_STATION_REF_ID: " + alarmSettings.stationRef)
@@ -88,10 +88,10 @@ class Scheduler(context: Context) {
         println("===== Creating EXTRAS - requestCode: " +  requestCodeAlarm)
         println("===== Creating EXTRAS - wakeEpoch: " +  alarmAsCal.timeInMillis.toString())
         println("===== Creating EXTRAS - unique_id: " +  System.currentTimeMillis())
-        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
-        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
-        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
-        println("===== Creating EXTRAS - snoozeStationRefId: " +  snoozeStationRefId)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  alarmSettings.stationRef)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  alarmSettings.stationRef)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  alarmSettings.stationRef)
+        println("===== Creating EXTRAS - snoozeStationRefId: " +  alarmSettings.stationRef)
 
 
 //        println("===== Creating Alarm Intent. alarmSettings.id: " + alarmSettings.id )
@@ -127,7 +127,6 @@ class Scheduler(context: Context) {
             for ((dayName, isOn) in alarmSettings.daysOfWeek) {
 //                println("$keyId  $dayName $isOn")
                 if (isOn) {
-//                    println("(setAllAlarms) ^^^^^^^^ createAlarmIntent 3 id: "+ alarmSettings.id + " ^^^^^^^^^")
                     this.createAlarmIntent(alarmSettings, dayName)
                 }
             }

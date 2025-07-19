@@ -1,18 +1,23 @@
 package com.example.bskiradioalarm.utils
 
 import PreferencesManagerSingleton
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.MediaStore.Audio.Radio
 import android.util.Log
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
 import com.example.bskiradioalarm.models.Station
@@ -54,6 +59,8 @@ class RadioService : Service() {
             println("+++++++(RadioService) startAlarm() +++++++")
             println("+++++++(RadioService) startAlarm() +++++++")
             println("+++++++(RadioService) startAlarm() +++++++")
+            println("+++++++(RadioService) alarmSettings.stationRef: " + alarmSettings.stationRef)
+            println("+++++++(RadioService) alarmSettings.id: " + alarmSettings.id)
 
             val radioIntent = Intent(context, RadioService::class.java)
             radioIntent.putExtra(this.EXTRA_STATION_REF_ID, alarmSettings.stationRef)
@@ -98,6 +105,13 @@ class RadioService : Service() {
         val isSnooze      = intent?.getBooleanExtra("isSnooze", false)
 
         var alarmSettings: AlarmSettings? = AlarmSettings.getAlarmById(alarmId.toString())
+        if (alarmSettings == null) {
+            println("THIS MOFO IS NULL WTF")
+            println("THIS MOFO IS NULL WTF")
+            println("THIS MOFO IS NULL WTF")
+            println("THIS MOFO IS NULL WTF")
+            println("THIS MOFO IS NULL WTF")
+        }
 
         if (alarmSettings == null) {
             alarmSettings = AlarmSettings()
@@ -111,7 +125,8 @@ class RadioService : Service() {
         println("(RadioService) - onStartCommand EXTRAS: previewAction= " + previewAction)
         println("(RadioService) - onStartCommand EXTRAS: streamUrl= " + streamUrl)
         println("(RadioService) - onStartCommand EXTRAS: isSnooze= " + isSnooze)
-        println("(RadioService) - onStartCommand FINAL: alarmSettings?.stationRef = " + alarmSettings?.stationRef)
+        println("(RadioService) - onStartCommand EXTRAS: alarmSettings?.stationRef = " + alarmSettings?.stationRef)
+        println("(RadioService) - onStartCommand EXTRAS: alarmSettings=" + alarmSettings)
 
         when (intent?.action) {
             RadioService.ACTION_ALARM -> {
@@ -183,16 +198,11 @@ class RadioService : Service() {
     }
 
     private fun startAlarmAux(alarmSettings: AlarmSettings): Int {
-        if (alarmSettings == null) {
-            println("SHIT IS NULL WTF!!!!!!!!!!!!!!!")
-            println("SHIT IS NULL WTF!!!!!!!!!!!!!!!")
-            println("SHIT IS NULL WTF!!!!!!!!!!!!!!!")
-//            return -11
-        }
         println("(RadioService) startAlarm - Start")
         println("(RadioService) startAlarm - PACKING 4 WakeUpActivity")
         println("(RadioService) startAlarm - PACKING 4 WakeUpActivity")
         println("(RadioService) startAlarm - PACKING 4 WakeUpActivity")
+        println("(RadioService) startAlarm - PACKING alarmSettings.stationRef: " + alarmSettings.stationRef)
 //        println("(RadioService) startAlarm - PUTTING alarmId INTO EXTRA: " + alarmSettings.id)
 //        println("(RadioService) alarmSettings " + alarmSettings)
         val uniqueRequestCode = (0..1000000).random()
@@ -202,25 +212,40 @@ class RadioService : Service() {
         openIntent.putExtra(RadioService.EXTRA_ALARM_ID, alarmSettings.id)
         openIntent.putExtra("uniqueRequestCode", uniqueRequestCode)
         openIntent.putExtra(RadioService.EXTRA_STATION_REF_ID, alarmSettings.stationRef)
-//        openIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        openIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-
+        openIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+//        openIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 
         val openPendingIntent = PendingIntent.getActivity(this, uniqueRequestCode, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = NotificationCompat.Builder(this, "music_channel")
+        val notification = NotificationCompat.Builder(this, CoolConstantData.music_channel_id)
             .setContentTitle("Bski Alarm: ")
             .setContentText("Tap to dismiss")
-            .setSmallIcon(android.R.drawable.ic_media_play)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+//            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setFullScreenIntent(openPendingIntent, true)
             .setSilent(true)
             .build()
 
+
+//        NotificationManagerCompat.from(this).notify(1, notification)
         startForeground(RadioService.notificationMusicId, notification)
+
+
+
+
+//        startForeground(RadioService.notificationMusicId, notification)
 //        playStream(streamUrl)
         val station: Station? = Station.getStationById(alarmSettings.stationRef)
         playStream(station!!.url)
+
+
+        println("(RadioService) startAlarm - STARTING ACTIVITY")
+//        wakeUpScreen(context)
+        this.startActivity(openIntent)
+
+
         return START_STICKY
     }
     private fun startPreviewStationNotif(isPlaying: Boolean, streamUrl: String) {
@@ -264,7 +289,18 @@ class RadioService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
+
+
+
+//        with(NotificationManagerCompat.from(this)) {
+//            notificationManager.notify(RadioService.notificationMusicId, notification)
+//        }
+//        startForeground(RadioService.notificationMusicId, notification)
         startForeground(RadioService.notificationMusicId, notification)
+
+        val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(RadioService.notificationMusicId, notification)
+
         if (isPlaying) {
             isRunning = true
         }

@@ -35,7 +35,7 @@ class OptionsMuteDialog : DialogFragment() {
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Start Alarm Muted (seconds):")
-            .setMessage("Online stations often play ads for the first x seconds. Work around by starting your alarm muted.")
+            .setMessage("Online stations often play ads for the first x seconds. Workaround that by starting your alarm muted.")
             .setView(dialogView)
             .setPositiveButton("OK") { dialog, _ ->
                 val selectedValue = values[numberPicker.value]

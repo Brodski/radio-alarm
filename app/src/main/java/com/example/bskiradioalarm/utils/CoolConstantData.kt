@@ -9,6 +9,8 @@ class CoolConstantData {
 
         var num = 0
 
+        val music_channel_id = "music_channel"
+
         fun doIncrement(numBase: Int? = null): Long {
             if (numBase != null) {
                 num = numBase

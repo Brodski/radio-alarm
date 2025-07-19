@@ -1,6 +1,8 @@
 package com.example.bskiradioalarm
 
 import PreferencesManagerSingleton
+import android.Manifest
+import android.app.AlarmManager
 import android.app.AlertDialog
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,14 +10,15 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -23,6 +26,8 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.bskiradioalarm.databinding.ActivityMainBinding
 import com.example.bskiradioalarm.utils.CoolConstantData
 import com.example.bskiradioalarm.utils.Scheduler
+import com.google.android.material.bottomnavigation.BottomNavigationView
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         // Passing each menu ID as a set of Ids because each menu should be considered as top level destinations.
         val appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
+                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_options
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
@@ -64,6 +69,10 @@ class MainActivity : AppCompatActivity() {
 //        checkAndRequestOverlayPermission()
         println("MAIN ACTIIVTY B")
         scheduler.setAllAlarms()
+
+
+
+
     }
 
 
@@ -88,14 +97,51 @@ class MainActivity : AppCompatActivity() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
-                "music_channel",
+                CoolConstantData.music_channel_id,
                 "Music Playback",
                 NotificationManager.IMPORTANCE_HIGH
             )
             serviceChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-            val manager = getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(serviceChannel)
+//            val manager = getSystemService(NotificationManager::class.java)
+//            manager?.createNotificationChannel(serviceChannel)
+            println("%% Context.NOTIFICATION_SERVICE:" + Context.NOTIFICATION_SERVICE)
+            val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(serviceChannel)
         }
+
+        var permissionState = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+
+        // If the permission is not granted, request it.
+        if (permissionState == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                1
+            )
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = Uri.parse("package:${packageName}")
+                }
+                startActivity(intent)
+            }
+        }
+
+//        println("Build.VERSION.SDK_INT: " + Build.VERSION.SDK_INT)
+//        println("Build.VERSION_CODES.TIRAMISU: " + Build.VERSION_CODES.TIRAMISU)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+//                data = Uri.fromParts("package", packageName, null)
+//            }
+//            startActivity(intent)
+//        }
+
+
+
+
     }
 
 

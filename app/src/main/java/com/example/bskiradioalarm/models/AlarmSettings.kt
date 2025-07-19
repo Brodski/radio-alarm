@@ -9,6 +9,7 @@ import android.media.AudioManager
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import com.example.bskiradioalarm.utils.RadioService
 import com.example.bskiradioalarm.utils.Scheduler
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.serialization.Serializable
@@ -38,7 +39,8 @@ data class AlarmSettings(
 
     var station: Station? = null,
 
-    var stationRef: String = ""
+//    var stationRef: String = ""
+    var stationRef: String = RadioService.DEFAULT_RADIO_REF_ID
 
 ) {
 
@@ -182,12 +184,14 @@ data class AlarmSettings(
 
     public fun findNextAlarmEvent(): Calendar? {
         var nowCal = Calendar.getInstance()
+        nowCal.add(Calendar.MINUTE, 1)
         var nextAlert = Calendar.getInstance()
 
         nextAlert[Calendar.HOUR_OF_DAY] = this.hour
         nextAlert[Calendar.MINUTE] = this.minute
 
 //        println("+=========== START ============+")
+        var isOnToday = false
         for (i in 1..7) {
             var nextDayNum = nextAlert[Calendar.DAY_OF_WEEK] // eg. 7 = Saturday
             val nextDayName = AlarmSettings.getDayName(nextDayNum) // eg. Saturday
@@ -196,8 +200,13 @@ data class AlarmSettings(
 //            println("(findNextAlarmEvent) nextDayName: " + nextDayName)
 //            println("(findNextAlarmEvent) nextIsOn: " +  nextIsOn)
 
+            println("???? nextDayName, nextIsOn:" + nextDayName + ", " + nextIsOn )
+            println("???? nextDayName, nextAlert.time:" + nextAlert.time )
+            println("???? nextDayName, nowCal.time:" + nowCal.time)
             if (i == 1 && nextIsOn == true && nextAlert.before(nowCal)) { // we set hours and minutes few lines ago
+                println("???? CONTINUE b/c is same day, but behind:")
                 nextAlert.add(Calendar.DAY_OF_MONTH, 1);
+                isOnToday = true
                 continue
             }
             if (nextIsOn == true){
@@ -205,7 +214,13 @@ data class AlarmSettings(
             }
 
             nextAlert.add(Calendar.DAY_OF_MONTH, 1);
+
+            if ( i == 7 && nextIsOn == false && isOnToday == true) {
+                println("???? Alarm must be on in 7 days from now")
+                break
+            }
             if ( i == 7 && nextIsOn == false) {
+                println("???? all alarms are disabled")
                 return null
             }
         }

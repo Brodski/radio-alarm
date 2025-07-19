@@ -12,29 +12,43 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
         android:fillViewport="true">  <!-- Ensures content takes up full screen -->
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:paddingTop="0dp">
 
         <!-- Blank Row with Plus Button -->
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@android:color/darker_gray"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:layout_height="70dp"
+            android:background="#1E3F67"
+            android:textSize="20sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+
+            <TextView
+                android:id="@+id/alarmLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:textSize="24sp"
+                android:text="New:"
+                android:textColor="#ECEFF1"
+                android:textStyle="bold" />
+
+
             <Button
                 android:id="@+id/addAlarmButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingTop="0dp"
-                android:paddingBottom="0dp"
+                android:layout_gravity="center"
                 android:text="+"
                 android:textSize="24sp"
                 android:textStyle="bold"/>
-        </LinearLayout>
+
+        </FrameLayout>
         <!-- TextView to Display Selected Time -->
 <!--        <TextView-->
 <!--            android:id="@+id/alarmTextView"-->

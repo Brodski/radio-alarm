@@ -1,13 +1,17 @@
 package com.example.bskiradioalarm.ui.wakeup
 
 import android.annotation.SuppressLint
+import android.app.KeyguardManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
+import android.os.Build
 import android.os.PowerManager
+import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
@@ -55,23 +59,34 @@ class WakeUpReceiver : BroadcastReceiver() {
 
 
         RadioService.startAlarm(context, alarmSettings, isSnooze)
-
-        val alarmIntent = Intent(context, WakeUpActivity::class.java)
-        // alarmIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-
-
-//        wakeUpScreen(context)
 //
+//        println("----------- STARTING ACTIVITY")
+//        wakeUpScreen(context)
+//        val alarmIntent = Intent(context, WakeUpActivity::class.java)
+//        alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
 //        context.startActivity(alarmIntent)
+
+
+
+
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock: PowerManager.WakeLock =
+            (context.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+                newWakeLock(PowerManager.FULL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE , "WakeUpActivity::MyWakelockTag").apply {
+                    acquire(10*60*1000L /*10 minutes*/)
+                }
+            }
+
+
+
+
+
+
+
 
         if (!isSnooze) {
             println("----------  SCHEDULING FOR NEXT WEEK")
             repeatNextWeek(context, currentAlarmCal, alarmId)
-//            repeatNextWeek(context, currentAlarmCal, stationRefId, alarmId)
         }
     }
 
@@ -101,22 +116,8 @@ class WakeUpReceiver : BroadcastReceiver() {
         repeatAlarmSettings.hour = nextWake.get(Calendar.HOUR_OF_DAY)
         repeatAlarmSettings.minute = nextWake.get(Calendar.MINUTE)
         repeatAlarmSettings.daysOfWeek[day]= true
-        // repeatAlarmSettings.station = Station()
-        // repeatAlarmSettings.station?.url = streamUrl
-        // repeatAlarmSettings.stationRef = stationRefId
-
-        // println("(repeatWake) nextWake.get(Calendar.DAY_OF_WEEK):" + nextWake.get(Calendar.DAY_OF_WEEK))
-        // println("(repeatWake) nextWake.get(Calendar.HOUR_OF_DAY):" + nextWake.get(Calendar.HOUR_OF_DAY))
-        // println("(repeatWake) nextWake.get(Calendar.MINUTE):" + nextWake.get(Calendar.MINUTE))
-        // println("(repeatWake) nextWake.DAY:" + day)
-        // println("(repeatWake) nextWake.time:" + nextWake.time)
-        // println("(repeatWake) nextWake.time:" + nextWake.time)
-        // println("(repeatWake) nextWake.time:" + nextWake.time)
 
         val scheduler = Scheduler(context)
-
-        // OLD
-//        scheduler.setWakeUp2(repeatAlarmSettings, day) // week will be incremented in setWakeUp2
 
         // NEW
         if (repeatAlarm == null) {

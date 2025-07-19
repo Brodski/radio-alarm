@@ -122,7 +122,7 @@ class AlarmsLogic {
         }
         val shiiit = sortedAlarms.firstOrNull()
         val formattedDate = formatter.format(shiiit?.time)
-        println(formattedDate)
+
         return shiiit
 
 
@@ -152,11 +152,12 @@ class AlarmsLogic {
 
 
 
-
+    // THIS IS DISABLED ATM, I just dont like it
     fun doQoLAlarmToast(alarmSettings: AlarmSettings, context: Context, view: View, dayName: String) {
         val tappedAlarmCal: Calendar? = toastForSingleAux(alarmSettings, dayName)
         var nextAlarm = tappedAlarmCal
         val dayHourMin: Triple<Int,Int,Int> = this.convertToTripletIntDiff(nextAlarm)
+        println("QOL TOAST - dayHourMin" + dayHourMin)
         //
         // Next Alarm toast
         //
@@ -172,6 +173,7 @@ class AlarmsLogic {
         else {
             nextAlarmMsg = "Alarm in ${dayHourMin.first} days, ${dayHourMin.second} hours, ${dayHourMin.third} min"
         }
+        println(nextAlarmMsg)
 
         //
         // Audio Toast
@@ -258,6 +260,10 @@ class AlarmsLogic {
         R.drawable.ic_notifications_black_24dp
         R.drawable.ic_home_black_24dp
         R.drawable.ic_dashboard_black_24dp
+
+        androidx.appcompat.R.drawable.abc_ic_menu_overflow_material
+
+
         androidx.appcompat.R.drawable.abc_ab_share_pack_mtrl_alpha
         androidx.appcompat.R.drawable.test_level_drawable
 
@@ -270,6 +276,20 @@ class AlarmsLogic {
         android.R.drawable.ic_menu_edit
 
         android.R.drawable.btn_dialog
+
+        android.R.drawable.ic_menu_crop
+
+        android.R.drawable.btn_dropdown
+
+        android.R.drawable.ic_menu_preferences
+
+        android.R.drawable.ic_menu_manage
+        android.R.drawable.ic_menu_view
+        android.R.drawable.ic_menu_help
+        android.R.drawable.ic_dialog_info
+        android.R.drawable.ic_menu_info_details
+
+        android.R.drawable.ic_menu_more
 
     }
 }

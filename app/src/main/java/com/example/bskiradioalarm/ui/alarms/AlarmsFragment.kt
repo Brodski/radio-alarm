@@ -23,9 +23,11 @@ import android.widget.ImageView
 import androidx.lifecycle.ViewModelProvider
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
-import com.example.bskiradioalarm.ui.options.OptionsViewModel
+//import com.example.bskiradioalarm.ui.options.OptionsViewModel
 import com.example.bskiradioalarm.ui.stationsdialog.MainMenuDialog
 import com.example.bskiradioalarm.utils.Scheduler
+import android.view.ViewGroup.LayoutParams
+import androidx.core.content.ContextCompat
 import kotlin.collections.LinkedHashMap
 
 class AlarmsFragment : Fragment() {
@@ -99,6 +101,10 @@ class AlarmsFragment : Fragment() {
         println("addNewAlarm() ")
 
         val newAlarmSettings: AlarmSettings = AlarmSettings()
+        println("newAlarmSettings.stationRef: " + newAlarmSettings.stationRef)
+        println("newAlarmSettings.stationRef: " + newAlarmSettings.stationRef)
+        println("newAlarmSettings.stationRef: " + newAlarmSettings.stationRef)
+        println("newAlarmSettings.stationRef: " + newAlarmSettings.stationRef)
 
         alarmsLogic.addNewAlarm(newAlarmSettings)
 
@@ -151,6 +157,7 @@ class AlarmsFragment : Fragment() {
 
     private fun someUpdateUiShit() {
         val nextAlarm: Calendar? = alarmsLogic.findNextAlarmFromAll()
+        println("someUpdateUiShit - nextAlarm: " + nextAlarm)
         alarmsViewModel.startTimer(nextAlarm)
 
     }
@@ -176,19 +183,24 @@ class AlarmsFragment : Fragment() {
         // EMPTY  CONTAINER
         val container = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 10, 10, 0)
+            setPadding(0, 40, 40, 0)
             gravity = Gravity.CENTER_VERTICAL
-            setBackgroundColor(Color.parseColor("#F0F0F0")) // Light gray background
+            weightSum = 11f
+            setBackgroundColor(Color.parseColor("#F0F0F0")) // Light gray backgroundLinearLayout
         }
 
         // Station Button (🔊)
         val stationButton = ImageButton(requireContext()).apply {
             setImageResource(android.R.drawable.ic_lock_silent_mode_off)
-            layoutParams = LinearLayout.LayoutParams(110, 60)
+//            layoutParams = LinearLayout.LayoutParams(110, 60)
+            layoutParams = LinearLayout.LayoutParams(0, 60, 1f)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setBackgroundColor(Color.TRANSPARENT)
+//            setBackgroundColor(Color.TRANSPARENT)
+            background = ContextCompat.getDrawable(context, R.drawable.imagebutton_background)
+
             setPadding(0, 0, 0, 0)
             setColorFilter(Color.BLACK)
+
             setOnClickListener { MainMenuDialog(alarmSettings).show(parentFragmentManager, "MenuMainTag")}
         }
 
@@ -196,7 +208,10 @@ class AlarmsFragment : Fragment() {
         val textView = TextView(requireContext()).apply {
             text = alarmSettings.prettyPrintTime()
             textSize = 18f
-            setPadding(20, 10, 20, 10)
+//            setPadding(20, 10, 20, 10)
+            setPadding(0, 0, 0, 0)
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 2f)
             setOnClickListener { openClockDialog(alarmSettings)}
             tag = "alarm_time_text"
         }
@@ -205,10 +220,13 @@ class AlarmsFragment : Fragment() {
         val todooo = android.R.drawable.ic_media_play
         val deleteButton = ImageButton(requireContext()).apply {
             setImageResource(android.R.drawable.ic_delete)
-            layoutParams = LinearLayout.LayoutParams(60, 60)
+//            layoutParams = LinearLayout.LayoutParams(60, 60, 1f)
+            layoutParams = LinearLayout.LayoutParams(0, 60, 1f)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setBackgroundColor(Color.TRANSPARENT)
-            setPadding(5, 5, 5, 5)
+            setPadding(0, 0, 0, 0)
+//            setPadding(5, 5, 5, 5)
+            minimumWidth = 60
             setOnClickListener { deleteAndConfirm(alarmSettings, container) }
         }
 
@@ -222,11 +240,13 @@ class AlarmsFragment : Fragment() {
             val checkBoxContainer = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(5, 5, 5, 5)
+//                setPadding(5, 5, 5, 5)
+                layoutParams = LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
+//                layoutParams = LinearLayout.LayoutParams()
             }
             val dayName = TextView(requireContext()).apply {
                 text = dayLabels[i]
-                textSize = 14f
+                textSize = 12f
                 gravity = Gravity.CENTER
             }
             val checkBox = CheckBox(requireContext()).apply {
@@ -259,7 +279,7 @@ class AlarmsFragment : Fragment() {
 
         alarmsLogic.toggleDayOnOff(alarmSettings, scheduler, dayIsOnMap.key, isChecked)
 
-        alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView(), dayIsOnMap.key)
+//        alarmsLogic.doQoLAlarmToast(alarmSettings, requireContext(), requireView(), dayIsOnMap.key)
 
         this.someUpdateUiShit()
 //        alarmsLogic.toastForSingle(alarmSettings, dayIsOnMap.key)

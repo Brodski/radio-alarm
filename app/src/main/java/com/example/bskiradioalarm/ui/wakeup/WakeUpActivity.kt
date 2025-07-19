@@ -1,6 +1,12 @@
 package com.example.bskiradioalarm.ui.wakeup
 
+import android.app.KeyguardManager
+import android.content.Context
+import android.health.connect.datatypes.units.Power
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +16,7 @@ import com.example.bskiradioalarm.utils.RadioService
 import com.example.bskiradioalarm.utils.Scheduler
 import java.util.Calendar
 import kotlin.random.Random
+
 
 class WakeUpActivity : AppCompatActivity() {
 
@@ -23,6 +30,30 @@ class WakeUpActivity : AppCompatActivity() {
 
 
         super.onCreate(savedInstanceState)
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+            var keyguardManager = getSystemService(AppCompatActivity.KEYGUARD_SERVICE) as KeyguardManager
+            keyguardManager.requestDismissKeyguard(this, null)
+        } else {
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD  or
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN
+            )
+        }
+
+        var keyguardManager = this.getSystemService(AppCompatActivity.KEYGUARD_SERVICE) as KeyguardManager
+        if (keyguardManager != null && keyguardManager.isKeyguardLocked) {
+            keyguardManager.requestDismissKeyguard(this, null)
+        }
+
+
         setContentView(R.layout.activity_wake_up)
 
         val btnSnooze = findViewById<Button>(R.id.btnSnooze)
@@ -81,7 +112,7 @@ class WakeUpActivity : AppCompatActivity() {
         println("(snooze) alarm.stationRef: " + alarmSettings.stationRef)
         println("(snooze) alarm.stationRef: " + alarmSettings.stationRef)
         println(" ````````` SNOOZE END `````````` ")
-        scheduler.createSnoozeIntent(alarmSettings, dayName, alarmSettings.stationRef)
+        scheduler.createSnoozeIntent(alarmSettings, dayName)
         return
     }
 

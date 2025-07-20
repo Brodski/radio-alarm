@@ -73,10 +73,14 @@ class AlarmsFragment : Fragment() {
             messageNextAlarmTextView.text = it
         }
 
+        return root
+    }
+
+    override fun onStart() {
+        super.onStart()
         val nextAlarm: Calendar? = alarmsLogic.findNextAlarmFromAll()
         alarmsViewModel.startTimer(nextAlarm)
 
-        return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -315,6 +319,10 @@ class AlarmsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    override fun onStop() {
+        super.onStop()
+        alarmsViewModel.stopTimer()
     }
 
 }

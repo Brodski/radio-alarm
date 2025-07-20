@@ -115,7 +115,6 @@ class AlarmsLogic {
                 continue
             }
             val formattedDate = formatter.format(alarmCal.time)
-            println(formattedDate)
         }
         if (sortedAlarms.size == 0) {
             return null

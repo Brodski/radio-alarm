@@ -190,21 +190,17 @@ data class AlarmSettings(
         nextAlert[Calendar.HOUR_OF_DAY] = this.hour
         nextAlert[Calendar.MINUTE] = this.minute
 
-//        println("+=========== START ============+")
         var isOnToday = false
         for (i in 1..7) {
             var nextDayNum = nextAlert[Calendar.DAY_OF_WEEK] // eg. 7 = Saturday
             val nextDayName = AlarmSettings.getDayName(nextDayNum) // eg. Saturday
             val nextIsOn = this.daysOfWeek[nextDayName]
-//            println("(findNextAlarmEvent) nextDayNum: " + nextDayNum)
-//            println("(findNextAlarmEvent) nextDayName: " + nextDayName)
-//            println("(findNextAlarmEvent) nextIsOn: " +  nextIsOn)
 
-            println("???? nextDayName, nextIsOn:" + nextDayName + ", " + nextIsOn )
-            println("???? nextDayName, nextAlert.time:" + nextAlert.time )
-            println("???? nextDayName, nowCal.time:" + nowCal.time)
+//            println("???? nextDayName, nextIsOn:" + nextDayName + ", " + nextIsOn )
+//            println("???? nextDayName, nextAlert.time:" + nextAlert.time )
+//            println("???? nextDayName, nowCal.time:" + nowCal.time)
             if (i == 1 && nextIsOn == true && nextAlert.before(nowCal)) { // we set hours and minutes few lines ago
-                println("???? CONTINUE b/c is same day, but behind:")
+//                println("???? CONTINUE b/c is same day, but behind:")
                 nextAlert.add(Calendar.DAY_OF_MONTH, 1);
                 isOnToday = true
                 continue
@@ -216,11 +212,11 @@ data class AlarmSettings(
             nextAlert.add(Calendar.DAY_OF_MONTH, 1);
 
             if ( i == 7 && nextIsOn == false && isOnToday == true) {
-                println("???? Alarm must be on in 7 days from now")
+//                println("???? Alarm must be on in 7 days from now")
                 break
             }
             if ( i == 7 && nextIsOn == false) {
-                println("???? all alarms are disabled")
+//                println("???? all alarms are disabled")
                 return null
             }
         }

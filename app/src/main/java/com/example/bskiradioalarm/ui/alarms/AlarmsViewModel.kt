@@ -34,6 +34,12 @@ class AlarmsViewModel : ViewModel() {
         scheduleNextTick(isUserEventGo)
     }
 
+    fun stopTimer() {
+        timer?.cancel()
+        timer = null
+        println("STOPPED TIMER")
+    }
+
     // TODO This code is copy and pasted @ doQoLAlarmToast
     private fun scheduleNextTick(isUserEventGo: Boolean = false) {
         val alarmsLogic: AlarmsLogic = AlarmsLogic()

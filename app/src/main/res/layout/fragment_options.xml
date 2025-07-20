@@ -33,7 +33,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
-
             <TextView
                 android:id="@+id/muteInfo"
                 android:layout_width="wrap_content"
@@ -41,14 +40,11 @@
                 android:layout_weight="1"
                 android:textSize="24dp"
                 android:text="Initial Mute: x seconds" />
-
-
             <Button
                 android:id="@+id/muteWheelBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Edit" />
-
         </LinearLayout>
 
         <LinearLayout
@@ -57,17 +53,36 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <TextView
+                android:id="@+id/snoozeInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textSize="24dp"
-                android:text="Alarm volume" />
+                android:text="Initial snooze: x minutes" />
             <Button
-                android:id="@+id/soundSettingsBtn"
+                android:id="@+id/snoozeWheelBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Edit" />
         </LinearLayout>
+
+<!--        <LinearLayout-->
+<!--            xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal">-->
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_weight="1"-->
+<!--                android:textSize="24dp"-->
+<!--                android:text="Alarm volume" />-->
+<!--            <Button-->
+<!--                android:id="@+id/soundSettingsBtn"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="Edit" />-->
+<!--        </LinearLayout>-->
 
         <LinearLayout
             xmlns:android="http://schemas.android.com/apk/res/android"

@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
+import com.example.bskiradioalarm.models.Optionz
 import com.example.bskiradioalarm.utils.RadioService
 import com.example.bskiradioalarm.utils.Scheduler
 import java.util.Calendar
@@ -67,7 +68,11 @@ class WakeUpActivity : AppCompatActivity() {
         println("WAKEUP GOT alarmId=$alarmId")
 
         btnSnooze.setOnClickListener {
-            Toast.makeText(this, "Snoozed for $SNOOZE_MINUTES minutes", Toast.LENGTH_SHORT).show()
+
+            val optionsSharedPreferences = PreferencesManagerSingleton.optionsSharedPrefs
+            val snoozeMinutes: String? = optionsSharedPreferences.getString(Optionz.SNOOZE_STORAGE_PREF_KEY, "5")
+
+            Toast.makeText(this, "Snoozed for $snoozeMinutes minutes", Toast.LENGTH_SHORT).show()
             snooze(alarmId, stationRef)
             stopMusic()
             finish()
@@ -89,8 +94,12 @@ class WakeUpActivity : AppCompatActivity() {
         println(" ````````` SNOOZE `````````` ")
         println(" ````````` SNOOZE `````````` ")
         println(" ````````` SNOOZE `````````` ")
+
+        val optionsSharedPreferences = PreferencesManagerSingleton.optionsSharedPrefs
+        val snoozeMinutes: String? = optionsSharedPreferences.getString(Optionz.SNOOZE_STORAGE_PREF_KEY, "5")
+        println("(snooze) snoozeMinutes: " + snoozeMinutes)
         var cal = Calendar.getInstance()
-        cal.add(Calendar.MINUTE, SNOOZE_MINUTES)
+        cal.add(Calendar.MINUTE, snoozeMinutes?.toInt() ?: 5)
         var day = cal.get(Calendar.DAY_OF_WEEK)
         var dayName = AlarmSettings.getDayName(day)
 

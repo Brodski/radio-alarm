@@ -6,8 +6,13 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -20,14 +25,21 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.bskiradioalarm.R
 import com.example.bskiradioalarm.models.AlarmSettings
+import com.example.bskiradioalarm.models.Optionz
 import com.example.bskiradioalarm.models.Station
 import com.example.bskiradioalarm.ui.wakeup.WakeUpActivity
+import java.util.Timer
+import java.util.TimerTask
 
 class RadioService : Service() {
 
     private var mediaPlayer: MediaPlayer? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private var timer: Timer? = null
+
+    private var rampSecond = 30
 
     companion object {
 
@@ -229,14 +241,10 @@ class RadioService : Service() {
             .build()
 
 
-//        NotificationManagerCompat.from(this).notify(1, notification)
-        startForeground(RadioService.notificationMusicId, notification)
+        startForeground(RadioService.notificationMusicId, notification)  // to onStartCommand()
 
 
-
-
-//        startForeground(RadioService.notificationMusicId, notification)
-//        playStream(streamUrl)
+        // BAM HERE!!!!!!!
         val station: Station? = Station.getStationById(alarmSettings.stationRef)
         playStream(station!!.url)
 
@@ -296,7 +304,7 @@ class RadioService : Service() {
 //            notificationManager.notify(RadioService.notificationMusicId, notification)
 //        }
 //        startForeground(RadioService.notificationMusicId, notification)
-        startForeground(RadioService.notificationMusicId, notification)
+        startForeground(RadioService.notificationMusicId, notification)  // to onStartCommand()
 
         val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(RadioService.notificationMusicId, notification)
@@ -310,16 +318,13 @@ class RadioService : Service() {
         currentStreamUrl = streamUrl
     }
 
-//
-//    private val handler = Handler(Looper.getMainLooper()) // Use a class-level handler
-//    private val prepareTimeout: Long = 10000L // 10 seconds
-//    private var timeoutRunnable: Runnable? = null
 
+    // BOOM
     private fun playStream(url: String) {
-
-        val handler = Handler(Looper.getMainLooper()) // Use a class-level handler
+        val handler = Handler(Looper.getMainLooper())
         val prepareTimeout: Long = 10000L // 10 seconds
-        var timeoutRunnable: Runnable? = null
+
+
         try {
             println("(RadioService) playStream: $url")
             println("(RadioService) playStream: $url")
@@ -338,19 +343,17 @@ class RadioService : Service() {
                 mediaPlayer?.reset()
             }
 
-            timeoutRunnable?.let { handler.removeCallbacks(it) }
-
             val timeoutRunnable: Runnable = Runnable {
                 println("MediaPlayer Prepare timed out! Invalid media or URL.")
                 stopBetter()
-                Toast.makeText(applicationContext, "⚠ Error playing streamXX!", Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, "⚠ Error playing stream!!!", Toast.LENGTH_LONG).show()
             }
 
 
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(url)
                 setOnErrorListener { _, what, extra ->
-                    println("MusicService Error: $what, Extra: $extra")
+                    println("MediaPlayer Error: $what, Extra: $extra")
                     handler.removeCallbacks(timeoutRunnable) // Cancel timeout
                     Toast.makeText(applicationContext, "⚠ Error playing stream!", Toast.LENGTH_LONG).show()
                     stopBetter()
@@ -358,7 +361,9 @@ class RadioService : Service() {
                 }
                 setOnPreparedListener {
                     handler.removeCallbacks(timeoutRunnable)
+                    setVolume(0f, 0f) // start silent
                     start()
+                    doSomething10secondsLater(handler)
                     println("MediaPlayer prepared and started.")
                 }
                 prepareAsync()
@@ -366,16 +371,69 @@ class RadioService : Service() {
             }
 
             // Schedule timeout handling
-//             timeoutRunnable?.let { handler.postDelayed(it, prepareTimeout) }
              handler.postDelayed(timeoutRunnable, prepareTimeout)
 
             currentStreamUrl = url
             isRunning = true
         } catch (e: Exception) {
-            println("MusicService: Unexpected Error: ${e.message}")
-            Log.e("MusicService", "Unexpected Error: ${e.message}")
+            println("MediaPlayer: Unexpected Error: ${e.message}")
             stopBetter()
         }
+
+    }
+
+    private fun rampVolume(stepsRemaining: Int) {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        var currentMUSICVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        if (currentMUSICVolume < 3) {
+            currentMUSICVolume = 3
+        }
+
+        val volumeChunk: Float = currentMUSICVolume.toFloat() / rampSecond
+        var volumeNew = volumeChunk * (rampSecond - stepsRemaining) // 0.433 * [ 30 - 29,28,27,26,25 ]
+
+        timer?.cancel()
+        timer = Timer()
+
+        val task = object : TimerTask() {
+            override fun run() {
+                println("(RadioService) RAMPING @ " + stepsRemaining + ": " + volumeNew)
+
+                if (mediaPlayer != null && mediaPlayer?.isPlaying == true) {
+                    mediaPlayer!!.setVolume(volumeNew, volumeNew)
+                }
+
+                // go next
+                if (stepsRemaining == 0) {
+                    timer?.cancel()
+                    timer = null
+                    println("(RadioService) RAMP COMPLETE")
+                    return
+                }
+                else {
+                    rampVolume(stepsRemaining - 1)
+                }
+            }
+        }
+        var delay = 1000L // 1 seconds
+        timer?.schedule(task, delay)
+
+    }
+
+    private fun doSomething10secondsLater(handler: Handler) {
+        val steps = 30
+
+        val optionsSharedPreferences = PreferencesManagerSingleton.optionsSharedPrefs
+        val muteSecondsX: String? = optionsSharedPreferences.getString(Optionz.MUTE_STORAGE_PREF_KEY, "0")
+        var muteSeconds: Long = muteSecondsX?.toLong() ?: 0L
+
+        println("(RadioService) muteSecond: " + muteSeconds)
+
+
+        handler.postDelayed({
+            println("$muteSeconds seconds later")
+            rampVolume(rampSecond)
+        }, muteSeconds * 1000)
     }
 
     fun stopBetter(): Int {

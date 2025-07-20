@@ -1,0 +1,216 @@
+package com.bski.bskiradioalarm
+
+import PreferencesManagerSingleton
+import android.Manifest
+import android.app.AlarmManager
+import android.app.AlertDialog
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
+import com.bski.bskiradioalarm.databinding.ActivityMainBinding
+import com.bski.bskiradioalarm.utils.CoolConstantData
+import com.bski.bskiradioalarm.utils.Scheduler
+import com.google.android.material.bottomnavigation.BottomNavigationView
+
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        PreferencesManagerSingleton.init(this) // need this at top
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        val navView: BottomNavigationView = binding.navView
+        val navController = findNavController(R.id.nav_host_fragment_activity_main)
+        // Passing each menu ID as a set of Ids because each menu should be considered as top level destinations.
+        val appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_options
+            )
+        )
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        navView.setupWithNavController(navController)
+
+        /////////////////////////////////////////////////////////////
+        // Boilerplate above
+        // My code below
+        /////////////////////////////////////////////////////////////
+        println("MAIN ACTIIVTY A")
+
+        // Init storage
+
+        createNotificationChannel()
+        // TODO
+        // HERE
+        // NOT GOOD CODE JUST TESTING
+//        hardDeleteStations()
+        val scheduler: Scheduler = Scheduler(this)
+        initStations()
+//        scheduler.testAlarmOnStart()
+//        checkAndRequestOverlayPermission()
+        println("MAIN ACTIIVTY B")
+        scheduler.setAllAlarms()
+
+
+
+
+    }
+
+
+
+    /////////////////////////////////////
+    /////////////////////////////////////
+    /////////////////////////////////////
+    private fun initStations() {
+        for (station in CoolConstantData.stationPreloadedList) {
+            if (PreferencesManagerSingleton.stationsSharedPrefs.contains(station.id)) {
+                println("☑ already saved: " + station.id)
+            } else {
+                println("❌ missing. will save")
+                station.save()
+            }
+        }
+    }
+
+    /////////////////////////////////////
+    ////      INIT NOTIFICATION      ////
+    /////////////////////////////////////
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                CoolConstantData.music_channel_id,
+                "Music Playback",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            serviceChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+//            val manager = getSystemService(NotificationManager::class.java)
+//            manager?.createNotificationChannel(serviceChannel)
+            val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(serviceChannel)
+        }
+
+        var permissionState = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+
+        // If the permission is not granted, request it.
+        if (permissionState == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                1
+            )
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = Uri.parse("package:${packageName}")
+                }
+                startActivity(intent)
+            }
+        }
+
+//        println("Build.VERSION.SDK_INT: " + Build.VERSION.SDK_INT)
+//        println("Build.VERSION_CODES.TIRAMISU: " + Build.VERSION_CODES.TIRAMISU)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+//                data = Uri.fromParts("package", packageName, null)
+//            }
+//            startActivity(intent)
+//        }
+
+
+
+
+    }
+
+
+    private fun hardDeleteAlarms() {
+        hardDelete(PreferencesManagerSingleton.alarmsSharedPrefs)
+    }
+    private fun hardDeleteStations() {
+        hardDelete(PreferencesManagerSingleton.stationsSharedPrefs)
+    }
+
+    /////////////////////////////////////
+    ////      HARD DELETE ALARMS     ////
+    ///////////////////////////////////
+    private fun hardDelete(sharedPreferences: SharedPreferences) {
+        val keysToDelete = sharedPreferences.all.keys.toList()
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println("GOING TO DELETE")
+        println(keysToDelete)
+        val editor = sharedPreferences.edit()
+        for (key in keysToDelete) {
+            editor.remove(key)
+            println("RIP $key")
+        }
+        editor.apply() // Apply all changes at once
+    }
+
+
+    ///////////////////////////////////////
+    ////      REQUEST ALARM POP UP     ////
+    ///////////////////////////////////////
+    fun checkAndRequestOverlayPermission() {
+        println("Build.VERSION.SDK_INT: " + Build.VERSION.SDK_INT)
+        println("Build.VERSION_CODES.M: " + Build.VERSION_CODES.M)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                showOverlayPermissionDialog(this)
+            } else {
+                Toast.makeText(this, "Overlay permission is already granted", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun showOverlayPermissionDialog(context: Context) {
+        val REQUEST_CODE_OVERLAY_PERMISSION = 1234
+
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Overlay Permission Required")
+        builder.setMessage("To continue, please allow this app to display over other apps.")
+        builder.setPositiveButton("Grant Permission") { _, _ ->
+            showOverlayPermissionDialog(this)
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            context.startActivity(intent)
+//            startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION)
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+            Toast.makeText(context, "Overlay permission is required for this feature.", Toast.LENGTH_LONG).show()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+
+}

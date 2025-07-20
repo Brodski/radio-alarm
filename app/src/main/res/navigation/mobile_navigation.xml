@@ -7,19 +7,19 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.example.bskiradioalarm.ui.alarms.AlarmsFragment"
+        android:name="com.bski.bskiradioalarm.ui.alarms.AlarmsFragment"
         android:label="@string/title_alarms"
         tools:layout="@layout/fragment_alarms" />
 
     <fragment
         android:id="@+id/navigation_dashboard"
-        android:name="com.example.bskiradioalarm.ui.dashboard.DashboardFragment"
+        android:name="com.bski.bskiradioalarm.ui.dashboard.DashboardFragment"
         android:label="@string/title_dashboard"
         tools:layout="@layout/fragment_dashboard" />
 
     <fragment
         android:id="@+id/navigation_options"
-        android:name="com.example.bskiradioalarm.ui.options.OptionsFragment"
+        android:name="com.bski.bskiradioalarm.ui.options.OptionsFragment"
         android:label="@string/title_options"
         tools:layout="@layout/fragment_options" />
 </navigation>

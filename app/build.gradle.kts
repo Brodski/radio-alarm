@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.bskiradioalarm"
+    namespace = "com.bski.bskiradioalarm"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.bskiradioalarm"
+        applicationId = "com.bski.bskiradioalarm"
         minSdk = 34
         targetSdk = 34
         versionCode = 1

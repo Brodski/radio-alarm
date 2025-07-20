@@ -1,0 +1,10 @@
+1. Open a terminal in your project root
+2. $ ./gradlew assembleRelease
+2. $ ./gradlew assembleRelease
+2. $ ./gradlew assembleRelease
+2. $ ./gradlew assembleRelease
+3. Find your APK here:
+    app/build/outputs/apk/release/app-release-unsigned.apk
+
+That's your raw .apk. You can install it with:
+    $ adb install app/build/outputs/apk/release/app-release-unsigned.apk

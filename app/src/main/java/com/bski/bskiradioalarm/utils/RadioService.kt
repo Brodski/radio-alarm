@@ -4,8 +4,10 @@ import PreferencesManagerSingleton
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.VolumeShaper
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -213,6 +215,7 @@ class RadioService : Service() {
 //            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setContentIntent(openPendingIntent)
             .setFullScreenIntent(openPendingIntent, true)
             .setSilent(true)
             .build()
@@ -330,6 +333,12 @@ class RadioService : Service() {
 
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(url)
+//                setAudioAttributes(
+//                    AudioAttributes.Builder()
+//                        .setUsage(AudioAttributes.USAGE_ALARM) // Alarm stream
+//                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+//                        .build()
+//                )
                 setOnErrorListener { _, what, extra ->
                     println("MediaPlayer Error: $what, Extra: $extra")
                     handler.removeCallbacks(timeoutRunnable) // Cancel timeout
@@ -340,9 +349,9 @@ class RadioService : Service() {
                 setOnPreparedListener {
                     handler.removeCallbacks(timeoutRunnable)
                     println("WTF VOLUME")
-                    start()
                     if (isActualAlarm) { setVolume(0f, 0f) } // start silent
                     if (isActualAlarm) { doSomething10secondsLater(handler) }
+                    start()
                     println("MediaPlayer prepared and started.")
                 }
                 prepareAsync()
@@ -361,15 +370,11 @@ class RadioService : Service() {
 
     }
 
-    private fun rampVolume(stepsRemaining: Int) {
+    private fun rampVolume(stepsRemaining: Int, currentMUSICVolume: Int) {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        var currentMUSICVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        if (currentMUSICVolume < 3) {
-            currentMUSICVolume = 3
-        }
-
-        val volumeChunk: Float = currentMUSICVolume.toFloat() / rampSecond
-        var volumeNew: Float = volumeChunk * (rampSecond - stepsRemaining) // 0.433 * [ 30 - 29,28,27,26,25 ]
+        val volumeChunk: Float = currentMUSICVolume.toFloat() / rampSecond.toFloat()
+//        println("(RadioService) $volumeChunk * ($rampSecond - $stepsRemaining)")
+        var volumeNew: Int = kotlin.math.round((volumeChunk * (rampSecond - stepsRemaining))).toInt() // 0.433 * [ 30 - 29,28,27,26,25 ]
 
         timer?.cancel()
         timer = Timer()
@@ -379,7 +384,8 @@ class RadioService : Service() {
                 println("(RadioService) RAMPING @ " + stepsRemaining + ": " + volumeNew)
 
                 if (mediaPlayer != null && mediaPlayer?.isPlaying == true) {
-                    mediaPlayer!!.setVolume(volumeNew, volumeNew)
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeNew, AudioManager.FLAG_SHOW_UI)
+                    mediaPlayer!!.setVolume(1f, 1f) // we 'unmute' because we muted before (0,0)
                 }
 
                 // go next
@@ -390,7 +396,7 @@ class RadioService : Service() {
                     return
                 }
                 else {
-                    rampVolume(stepsRemaining - 1)
+                    rampVolume(stepsRemaining - 1, currentMUSICVolume)
                 }
             }
         }
@@ -411,7 +417,22 @@ class RadioService : Service() {
 
         handler.postDelayed({
             println("$muteSeconds seconds later")
-            rampVolume(rampSecond)
+
+
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+            var currentMUSICVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if (currentMUSICVolume < 3) {
+                currentMUSICVolume = 3
+            }
+
+            val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            println("(RadioService) currentMUSICVolume: " + currentMUSICVolume)
+            println("(RadioService) max: " + max)
+
+
+            rampVolume(rampSecond, currentMUSICVolume)
+//            rampVolume2(rampSecond)
         }, muteSeconds * 1000)
     }
 

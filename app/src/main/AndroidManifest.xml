@@ -26,7 +26,7 @@
 
         <activity
             android:name=".ui.wakeup.WakeUpActivity"
-            android:exported="false"
+            android:exported="true"
             android:launchMode="singleTop"
             android:excludeFromRecents="true"
             android:showOnLockScreen="true"
@@ -71,6 +71,7 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.SUBSCRIBE_TO_KEYGUARD_LOCKED_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
 
 

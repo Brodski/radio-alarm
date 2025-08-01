@@ -53,6 +53,7 @@ class WakeUpActivity : AppCompatActivity() {
 
 
         setContentView(R.layout.activity_wake_up)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         val btnSnooze = findViewById<Button>(R.id.btnSnooze)
         val btnDismiss = findViewById<Button>(R.id.btnDismiss)

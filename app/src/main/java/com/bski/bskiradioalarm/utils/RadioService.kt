@@ -370,9 +370,9 @@ class RadioService : Service() {
 
     }
 
-    private fun rampVolume(stepsRemaining: Int, currentMUSICVolume: Int) {
+    private fun rampVolume(stepsRemaining: Int, volumeOfAlarm: Int) {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val volumeChunk: Float = currentMUSICVolume.toFloat() / rampSecond.toFloat()
+        val volumeChunk: Float = volumeOfAlarm.toFloat() / rampSecond.toFloat()
 //        println("(RadioService) $volumeChunk * ($rampSecond - $stepsRemaining)")
         var volumeNew: Int = kotlin.math.round((volumeChunk * (rampSecond - stepsRemaining))).toInt() // 0.433 * [ 30 - 29,28,27,26,25 ]
 
@@ -396,7 +396,7 @@ class RadioService : Service() {
                     return
                 }
                 else {
-                    rampVolume(stepsRemaining - 1, currentMUSICVolume)
+                    rampVolume(stepsRemaining - 1, volumeOfAlarm)
                 }
             }
         }
@@ -418,20 +418,20 @@ class RadioService : Service() {
         handler.postDelayed({
             println("$muteSeconds seconds later")
 
-
             val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-            var currentMUSICVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-            if (currentMUSICVolume < 3) {
-                currentMUSICVolume = 3
-            }
-
+//            var currentMUSICVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+//            if (currentMUSICVolume < 3) {
+//                currentMUSICVolume = 3
+//            }
+            val volumeOfAlarmzzzzz: String? = optionsSharedPreferences.getString(Optionz.VOLUME_STORAGE_PREF_KEY, "7")
+            val volumeOfAlarm: Int = volumeOfAlarmzzzzz?.toInt() ?: 7
             val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-            println("(RadioService) currentMUSICVolume: " + currentMUSICVolume)
+            println("(RadioService) volumeOfAlarm: " + volumeOfAlarm)
             println("(RadioService) max: " + max)
 
 
-            rampVolume(rampSecond, currentMUSICVolume)
+            rampVolume(rampSecond, volumeOfAlarm)
 //            rampVolume2(rampSecond)
         }, muteSeconds * 1000)
     }

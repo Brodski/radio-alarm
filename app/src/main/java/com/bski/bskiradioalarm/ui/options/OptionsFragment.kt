@@ -1,5 +1,7 @@
 package com.bski.bskiradioalarm.ui.options
 
+import android.content.Context
+import android.media.AudioManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -24,17 +26,14 @@ class OptionsFragment : Fragment() {
         _binding = FragmentOptionsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-//        val textView: TextView = binding.textNotifications
-//        notificationsViewModel.text.observe(viewLifecycleOwner) {
-//            textView.text = it
-//        }
-
         val muteView: TextView = binding.muteInfo
         val snoozeView: TextView = binding.snoozeInfo
+        val volumeView: TextView = binding.volumeInfo
 
         // populate textview, alternative style
         updateUiMuteMessage(muteView)
         updateUiSnoozeMessage(snoozeView)
+        updateUiVolumeMessage(volumeView)
 
         // trick to do something after dialog
         // MUTE
@@ -44,9 +43,18 @@ class OptionsFragment : Fragment() {
         // SNOOZE
         parentFragmentManager.setFragmentResultListener("snoozeDialogClosed", viewLifecycleOwner) { _, _ ->
             updateUiSnoozeMessage(snoozeView)
-
+        }
+        // VOLUME
+        parentFragmentManager.setFragmentResultListener("volumeDialogClosed", viewLifecycleOwner) { _, _ ->
+            updateUiVolumeMessage(volumeView)
         }
 
+
+        // Edit Volume
+        var volumeWheelBtn: Button = binding.volumeWheelBtn
+        volumeWheelBtn.setOnClickListener {
+            OptionsVolumeDialog().show(parentFragmentManager, "volumeShit")
+        }
 
         // Edit Mute button
         var muteWheelBtn: Button = binding.muteWheelBtn
@@ -54,6 +62,17 @@ class OptionsFragment : Fragment() {
             OptionsMuteDialog().show(parentFragmentManager, "mutedatshit")
         }
 
+        // Edit Snooze Time
+        var snoozeWheelBtn: Button = binding.snoozeWheelBtn
+        snoozeWheelBtn.setOnClickListener {
+            OptionsSnoozeDialog().show(parentFragmentManager, "snoozeTimerz")
+        }
+
+        // Add More Stations Btn
+        var loadMoreBtn: Button = binding.loadMoreBtn
+        loadMoreBtn.setOnClickListener {
+            OptionsAddMoreDialog().show(parentFragmentManager, "addMore")
+        }
 
 //        // Edit Alarm Sound
 //        var soundSettingsBtn: Button = binding.soundSettingsBtn
@@ -61,19 +80,6 @@ class OptionsFragment : Fragment() {
 //            val intent = Intent(Settings.ACTION_SOUND_SETTINGS)
 //            startActivity(intent)
 //        }
-
-        // Snooze Time
-        var snoozeWheelBtn: Button = binding.snoozeWheelBtn
-        snoozeWheelBtn.setOnClickListener {
-            OptionsSnoozeDialog().show(parentFragmentManager, "snoozeTimerz")
-        }
-
-        // Add More Stations
-        var loadMoreBtn: Button = binding.loadMoreBtn
-        loadMoreBtn.setOnClickListener {
-            OptionsAddMoreDialog().show(parentFragmentManager, "addMore")
-        }
-
 
 
         return root
@@ -88,9 +94,15 @@ class OptionsFragment : Fragment() {
     private fun updateUiSnoozeMessage(snoozeView: TextView) {
         val optionsSharedPreferences = PreferencesManagerSingleton.optionsSharedPrefs
         val snooze_minutes: String? = optionsSharedPreferences.getString(Optionz.SNOOZE_STORAGE_PREF_KEY, "5")
-        println("snooze_minutessnooze_minutessnooze_minutessnooze_minutessnooze_minutes:" + snooze_minutes)
         snoozeView.text = "Snooze for $snooze_minutes minutes"
     }
+
+    private fun updateUiVolumeMessage(volumeView: TextView) {
+        val optionsSharedPreferences = PreferencesManagerSingleton.optionsSharedPrefs
+        val volume: String? = optionsSharedPreferences.getString(Optionz.VOLUME_STORAGE_PREF_KEY, "7")
+        volumeView.text = "Volume: $volume"
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

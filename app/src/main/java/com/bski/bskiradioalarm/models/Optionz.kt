@@ -8,7 +8,7 @@ class Optionz {
     companion object {
         const val MUTE_STORAGE_PREF_KEY = "mute"
         const val SNOOZE_STORAGE_PREF_KEY = "snooze"
-        const val DEFAULT_AGE = 30
+        const val VOLUME_STORAGE_PREF_KEY = "volume"
     }
 
     constructor(name: String, age: Int) {

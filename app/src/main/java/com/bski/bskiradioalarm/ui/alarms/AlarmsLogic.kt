@@ -173,12 +173,19 @@ class AlarmsLogic {
         }
         println(nextAlarmMsg)
 
-        //
-        // Audio Toast
-        //
+        // someRandomBullshitAlarmWarning(context, view)
+        Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_SHORT).show()
+        println("\uD83D\uDD0A Settings → Sound → Alarm Volume")
+    }
+
+    // This code not used
+    // This code not used
+    // This code not used
+    private fun someRandomBullshitAlarmWarning(context: Context, view: View) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
         val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        var nextAlarmMsg = ""
 
         if (currentVolume == 0) {
             nextAlarmMsg = "⚠ Alarm is silent! \uD83D\uDD07" + "\nSettings → Sound → Alarm Volume\n" + nextAlarmMsg // ⚠
@@ -196,11 +203,8 @@ class AlarmsLogic {
             snackbar.show()
         }
         else {
-//            Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_LONG).show()
             Toast.makeText(context, nextAlarmMsg, Toast.LENGTH_SHORT).show()
         }
-        println( "Alarm Volume: $currentVolume / $maxVolume")
-        println("\uD83D\uDD0A Settings → Sound → Alarm Volume")
     }
 
     private fun nothing() {

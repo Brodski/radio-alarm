@@ -1,8 +1,10 @@
 package com.bski.bskiradioalarm.ui.wakeup
 
 import android.app.KeyguardManager
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
@@ -36,15 +38,16 @@ class WakeUpActivity : AppCompatActivity() {
             var keyguardManager = getSystemService(AppCompatActivity.KEYGUARD_SERVICE) as KeyguardManager
             keyguardManager.requestDismissKeyguard(this, null)
         } else {
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD  or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN
-            )
         }
+
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD  or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
 
         var keyguardManager = this.getSystemService(AppCompatActivity.KEYGUARD_SERVICE) as KeyguardManager
         if (keyguardManager != null && keyguardManager.isKeyguardLocked) {
@@ -58,7 +61,6 @@ class WakeUpActivity : AppCompatActivity() {
         val btnSnooze = findViewById<Button>(R.id.btnSnooze)
         val btnDismiss = findViewById<Button>(R.id.btnDismiss)
 
-//        val stationRef = intent.getStringExtra("stationIdRef") ?: "-1"
         val stationRef = intent.getStringExtra(RadioService.EXTRA_STATION_REF_ID) ?: "-1"
         val alarmId = intent.getStringExtra(RadioService.EXTRA_ALARM_ID) ?: "FAILED_ALARMID"
 
@@ -77,10 +79,23 @@ class WakeUpActivity : AppCompatActivity() {
         }
 
         btnDismiss.setOnClickListener {
-//            Toast.makeText(this, "Dismissed!", Toast.LENGTH_SHORT).show()
             stopMusic()
             finish()
         }
+
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "myapp:AlarmLock")
+
+
+        try {
+            wakeLock.acquire(3000) // Keep CPU awake for ~3 seconds
+            // startForeground(RadioService.notificationMusicId, notification)
+        } finally {
+            if (wakeLock.isHeld) {
+                wakeLock.release()
+            }
+        }
+
     }
 
     override fun onDestroy() {

@@ -109,7 +109,10 @@ class Scheduler(context: Context) {
         }
         else {
             // send it
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmAsCal.timeInMillis, pendingIntent)
+            // alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmAsCal.timeInMillis, pendingIntent)
+
+            val alarmClockInfo = AlarmManager.AlarmClockInfo(alarmAsCal.timeInMillis, pendingIntent)
+            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
         }
         println("INTENT CREATED set for: ${alarmAsCal.time} ")
         println("=====================    END    =========================")
